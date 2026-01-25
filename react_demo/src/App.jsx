@@ -1,34 +1,109 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { Layout } from './components/Layout'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Jobs, { JobForm } from './pages/Jobs'
+import Chat from './pages/Chat'
+import Resources, { ResourceForm } from './pages/Resources'
+import CustomerService from './pages/CustomerService'
+import Profile from './pages/Profile'
+import useUserStore from './stores/userStore'
+
+// Protected route wrapper
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useUserStore()
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+// Enterprise only route wrapper
+const EnterpriseRoute = ({ children }) => {
+  const { isAuthenticated, user } = useUserStore()
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (user?.role !== 'enterprise') {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        {/* Public routes */}
+        <Route index element={<Home />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="jobs" element={<Jobs />} />
+        <Route path="resources" element={<Resources />} />
+        <Route path="customer-service" element={<CustomerService />} />
+
+        {/* Protected routes */}
+        <Route
+          path="chat"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Enterprise only routes */}
+        <Route
+          path="jobs/create"
+          element={
+            <EnterpriseRoute>
+              <JobForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="jobs/edit/:id"
+          element={
+            <EnterpriseRoute>
+              <JobForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="resources/create"
+          element={
+            <EnterpriseRoute>
+              <ResourceForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="resources/edit/:id"
+          element={
+            <EnterpriseRoute>
+              <ResourceForm />
+            </EnterpriseRoute>
+          }
+        />
+
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   )
 }
 
