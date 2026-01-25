@@ -17,6 +17,20 @@ async def chat_with_ai(
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
+    # Get recent chat history for context (last 10 messages)
+    chat_history = []
+    if current_user:
+        recent_messages = db.query(CustomerServiceMessage).filter(
+            CustomerServiceMessage.user_id == current_user.id
+        ).order_by(CustomerServiceMessage.created_at.desc()).limit(10).all()
+
+        # Reverse to get chronological order
+        recent_messages = list(reversed(recent_messages))
+        chat_history = [
+            {"role": "user" if msg.is_user else "assistant", "content": msg.content}
+            for msg in recent_messages
+        ]
+
     # Save user message
     user_msg = CustomerServiceMessage(
         user_id=current_user.id if current_user else None,
@@ -25,8 +39,8 @@ async def chat_with_ai(
     )
     db.add(user_msg)
 
-    # Get AI response
-    ai_response = await ai_service.get_customer_service_response(request.message)
+    # Get AI response with context
+    ai_response = await ai_service.get_customer_service_response(request.message, chat_history)
 
     # Save AI response
     ai_msg = CustomerServiceMessage(
