@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(.venvScriptspip install -r requirements.txt)",
+      "Bash(python -m pip install:*)",
+      "Bash(python init_db.py:*)",
+      "Bash(python run.py:*)",
+      "Bash(pip install:*)",
+      "Bash(npm run dev)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell -Command \"Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(python:*)",
+      "Bash(pushd:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(mysql -u root -p123456 -e \"DELETE FROM users;\" intelligence_db)",
+      "Bash(mysql:*)"
+    ]
+  }
+}

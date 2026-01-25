@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
@@ -10,6 +10,7 @@ from ..models.conversation import Conversation, Message, MessageType
 from ..schemas.chat import ConversationResponse, MessageCreate, MessageResponse, GetOrCreateConversation
 from ..services.websocket_manager import ws_manager
 from ..services.ai_service import ai_service
+from ..services.rag_service import rag_service
 
 router = APIRouter()
 
@@ -128,10 +129,31 @@ async def get_messages(
     return [MessageResponse.model_validate(msg) for msg in messages]
 
 
+async def index_hr_reply_to_knowledge(
+    question: str,
+    answer: str,
+    job_id: int,
+    hr_id: int,
+    conversation_id: int
+):
+    """后台任务：将 HR 回复索引到知识库"""
+    try:
+        await rag_service.index_message_pair(
+            question=question,
+            answer=answer,
+            job_id=job_id,
+            hr_id=hr_id,
+            conversation_id=conversation_id
+        )
+    except Exception as e:
+        print(f"Failed to index HR reply: {e}")
+
+
 @router.post("/conversations/{conversation_id}/messages", response_model=MessageResponse)
 async def send_message(
     conversation_id: int,
     message_data: MessageCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -171,17 +193,46 @@ async def send_message(
     # Check if target user exists in database
     target_user = db.query(User).filter(User.id == target_user_id).first()
 
-    # Send AI response if target user doesn't exist or is offline
-    if not target_user or not ws_manager.is_user_online(target_user_id):
+    # Check if current user is HR (target is student)
+    is_hr_reply = current_user.user_type == "enterprise"
+
+    # If HR is replying, index the Q&A pair to knowledge base
+    if is_hr_reply and conv.job_id:
+        # Get the last student message as the question
+        last_student_msg = db.query(Message).filter(
+            Message.conversation_id == conversation_id,
+            Message.sender_id == target_user_id,
+            Message.type == MessageType.TEXT
+        ).order_by(Message.created_at.desc()).first()
+
+        if last_student_msg:
+            # Index in background
+            background_tasks.add_task(
+                index_hr_reply_to_knowledge,
+                question=last_student_msg.content,
+                answer=message_data.content,
+                job_id=conv.job_id,
+                hr_id=current_user.id,
+                conversation_id=conversation_id
+            )
+
+    # Send AI response if target user doesn't exist or is offline (only for student messages)
+    if not is_hr_reply and (not target_user or not ws_manager.is_user_online(target_user_id)):
         # Get context for AI
         context = ""
+        job_id = None
         if conv.job_id:
             job = db.query(Job).filter(Job.id == conv.job_id).first()
             if job:
+                job_id = job.id
                 context = f"岗位: {job.title}, 公司: {job.company}, 薪资: {job.salary if hasattr(job, 'salary') else '面议'}, 地点: {job.location if hasattr(job, 'location') else '未知'}, 描述: {job.description}"
 
-        # Get AI response
-        ai_response = await ai_service.get_chat_response(message_data.content, context)
+        # Get AI response with RAG enhancement
+        ai_response = await ai_service.get_chat_response_with_rag(
+            message=message_data.content,
+            context=context,
+            job_id=job_id
+        )
 
         # Save AI message
         ai_message = Message(

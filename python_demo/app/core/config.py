@@ -15,6 +15,16 @@ class Settings(BaseSettings):
     GLM_API_KEY: str = ""
     GLM_API_URL: str = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
+    # 智谱 Embedding API
+    ZHIPU_EMBEDDING_URL: str = "https://open.bigmodel.cn/api/paas/v4/embeddings"
+
+    # ChromaDB 配置
+    CHROMADB_PATH: str = "./chromadb_data"
+
+    # RAG 配置
+    RAG_TOP_K: int = 5
+    RAG_SIMILARITY_THRESHOLD: float = 0.7
+
     # CORS
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
 

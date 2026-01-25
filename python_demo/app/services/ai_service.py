@@ -2,6 +2,7 @@
 import httpx
 from typing import Optional
 from ..core.config import settings
+from .rag_service import rag_service
 
 
 class AIService:
@@ -130,6 +131,55 @@ class AIService:
         except Exception as e:
             print(f"AI Service Error: {e}")
             return self._get_customer_service_fallback(message)
+
+    async def get_chat_response_with_rag(
+        self,
+        message: str,
+        context: Optional[str] = None,
+        job_id: Optional[int] = None
+    ) -> str:
+        """使用 RAG 增强的聊天回复"""
+        # 获取 RAG 上下文
+        rag_context = await rag_service.build_rag_context(message, job_id)
+
+        # 构建增强的 system prompt
+        system_prompt = (
+            "你是一个企业HR助手，负责在HR离线时自动回复求职者的问题。"
+            "请根据提供的岗位信息和历史问答参考，礼貌且专业地回答求职者的问题。"
+            "如果问题超出你的知识范围，请建议求职者等待HR上线后再详细咨询。"
+        )
+
+        if context:
+            system_prompt += f"\n\n岗位信息：{context}"
+
+        if rag_context:
+            system_prompt += f"\n\n{rag_context}\n\n请参考以上历史问答，为当前问题提供一致且准确的回答。"
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.api_url,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "glm-4",
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": message}
+                        ],
+                        "temperature": 0.7,
+                        "max_tokens": 500
+                    },
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            print(f"AI Service Error (RAG): {e}")
+            return self._get_fallback_response(message)
 
     def _get_fallback_response(self, message: str) -> str:
         return (
