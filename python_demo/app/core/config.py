@@ -25,6 +25,18 @@ class Settings(BaseSettings):
     RAG_TOP_K: int = 5
     RAG_SIMILARITY_THRESHOLD: float = 0.7
 
+    # Redis 配置 (短时记忆)
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str = ""
+    CHAT_CONTEXT_TTL: int = 3600  # 聊天上下文过期时间（秒），默认1小时
+
+    # 智能客服配置
+    CS_MAX_CONTEXT_MESSAGES: int = 20  # 客服上下文最大消息数
+    CS_RAG_TOP_K: int = 3  # 客服RAG检索数量
+    CS_SIMILARITY_THRESHOLD: float = 0.7  # 客服RAG相似度阈值
+
     # CORS
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
 

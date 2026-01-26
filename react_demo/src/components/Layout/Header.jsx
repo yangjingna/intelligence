@@ -37,7 +37,7 @@ const Header = () => {
                 to="/resources"
                 className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                资源中心
+                {user?.role === 'enterprise' ? '资源发布' : '资源匹配'}
               </Link>
               <Link
                 to="/customer-service"

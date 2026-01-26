@@ -217,10 +217,10 @@ const Resources = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEnterprise ? '资源管理' : '资源中心'}
+            {isEnterprise ? '资源发布' : '资源匹配'}
           </h1>
           <p className="text-gray-600 mt-1">
-            {isEnterprise ? '管理您发布的产学研资源' : '发现产学研合作机会'}
+            {isEnterprise ? '发布和管理您的产学研资源' : '发现适合您的产学研合作机会'}
           </p>
         </div>
         {isEnterprise && (

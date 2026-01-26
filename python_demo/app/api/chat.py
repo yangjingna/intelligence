@@ -4,13 +4,13 @@ from typing import List
 from datetime import datetime
 from ..core.database import get_db
 from ..core.security import get_current_user
-from ..models.user import User
+from ..models.user import User, UserRole
 from ..models.job import Job
 from ..models.conversation import Conversation, Message, MessageType
 from ..schemas.chat import ConversationResponse, MessageCreate, MessageResponse, GetOrCreateConversation
 from ..services.websocket_manager import ws_manager
 from ..services.ai_service import ai_service
-from ..services.rag_service import rag_service
+from ..services.rag_agent_service import rag_agent
 
 router = APIRouter()
 
@@ -136,15 +136,17 @@ async def index_hr_reply_to_knowledge(
     hr_id: int,
     conversation_id: int
 ):
-    """后台任务：将 HR 回复索引到知识库"""
+    """后台任务：将 HR 回复索引到知识库（长期记忆）"""
     try:
-        await rag_service.index_message_pair(
+        success = await rag_agent.index_hr_answer(
             question=question,
             answer=answer,
             job_id=job_id,
             hr_id=hr_id,
             conversation_id=conversation_id
         )
+        if success:
+            print(f"Successfully indexed HR reply to knowledge base: conv={conversation_id}")
     except Exception as e:
         print(f"Failed to index HR reply: {e}")
 
@@ -194,7 +196,7 @@ async def send_message(
     target_user = db.query(User).filter(User.id == target_user_id).first()
 
     # Check if current user is HR (target is student)
-    is_hr_reply = current_user.user_type == "enterprise"
+    is_hr_reply = current_user.role == UserRole.ENTERPRISE
 
     # If HR is replying, index the Q&A pair to knowledge base
     if is_hr_reply and conv.job_id:
@@ -218,20 +220,21 @@ async def send_message(
 
     # Send AI response if target user doesn't exist or is offline (only for student messages)
     if not is_hr_reply and (not target_user or not ws_manager.is_user_online(target_user_id)):
-        # Get context for AI
-        context = ""
+        # Get job context for AI
+        job_context = None
         job_id = None
         if conv.job_id:
             job = db.query(Job).filter(Job.id == conv.job_id).first()
             if job:
                 job_id = job.id
-                context = f"岗位: {job.title}, 公司: {job.company}, 薪资: {job.salary if hasattr(job, 'salary') else '面议'}, 地点: {job.location if hasattr(job, 'location') else '未知'}, 描述: {job.description}"
+                job_context = f"岗位名称: {job.title}\n公司: {job.company}\n薪资: {job.salary if hasattr(job, 'salary') else '面议'}\n地点: {job.location if hasattr(job, 'location') else '未知'}\n岗位描述: {job.description}"
 
-        # Get AI response with RAG enhancement
-        ai_response = await ai_service.get_chat_response_with_rag(
-            message=message_data.content,
-            context=context,
-            job_id=job_id
+        # 使用 RAG 智能体获取回复
+        ai_response, used_rag = await rag_agent.get_intelligent_response(
+            user_message=message_data.content,
+            conversation_id=conversation_id,
+            job_id=job_id,
+            job_context=job_context
         )
 
         # Save AI message

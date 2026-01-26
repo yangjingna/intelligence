@@ -6,6 +6,7 @@ import useChatStore from '../../stores/chatStore'
 import wsService from '../../services/websocket'
 import { formatTime } from '../../utils/helpers'
 import { MESSAGE_TYPES } from '../../utils/constants'
+import SummaryPanel from '../../components/SummaryPanel'
 
 const MessageBubble = ({ message, isOwn }) => {
   const isAI = message.type === MESSAGE_TYPES.AI_RESPONSE
@@ -108,6 +109,7 @@ const Chat = () => {
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
   const messagesEndRef = useRef(null)
 
   // Redirect to login if not authenticated
@@ -347,11 +349,21 @@ const Chat = () => {
                   </p>
                 </div>
               </div>
-              {currentConversation.jobTitle && (
-                <span className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded-full">
-                  {currentConversation.jobTitle}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {currentConversation.jobTitle && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded-full">
+                    {currentConversation.jobTitle}
+                  </span>
+                )}
+                <button
+                  onClick={() => setShowSummary(true)}
+                  className="px-3 py-1 bg-purple-100 text-purple-600 text-sm rounded-full hover:bg-purple-200 transition-colors flex items-center gap-1"
+                  title="AI 智能总结"
+                >
+                  <span>AI</span>
+                  <span>智能总结</span>
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -396,6 +408,14 @@ const Chat = () => {
           </div>
         )}
       </div>
+
+      {/* Summary Panel Modal */}
+      {showSummary && currentConversation && (
+        <SummaryPanel
+          conversationId={currentConversation.id}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
     </div>
   )
 }

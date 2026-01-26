@@ -84,4 +84,9 @@ export const customerServiceAPI = {
   getHistory: () => api.get('/customer-service/history')
 }
 
+// Summary API
+export const summaryAPI = {
+  getConversationSummary: (conversationId) => api.get(`/summary/conversations/${conversationId}`)
+}
+
 export default api

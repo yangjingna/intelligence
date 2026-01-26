@@ -17,7 +17,12 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(mysql -u root -p123456 -e \"DELETE FROM users;\" intelligence_db)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(timeout /t 8 /nobreak)",
+      "Bash(powershell -Command \"cd 'E:\\\\graduate\\\\intelligence\\\\python_demo'; python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000\":*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 8; Get-Content ''C:\\\\Users\\\\ADMINI~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\E--graduate-intelligence\\\\tasks\\\\bb2f13f.output''\")",
+      "Bash(tree:*)",
+      "Bash(find:*)"
     ]
   }
 }
