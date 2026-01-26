@@ -45,38 +45,72 @@ class CustomerServiceMemoryService:
 
         return dot_product / (norm_a * norm_b)
 
-    # ============ 短时记忆（Redis）============
+    # ============ 短时记忆（Redis + MySQL降级）============
+
+    def _is_redis_available(self) -> bool:
+        """检查Redis是否可用"""
+        return redis_client.is_connected
 
     async def add_user_message(self, user_id: int, content: str) -> bool:
         """添加用户消息到短时记忆"""
-        return redis_client.append_customer_service_message(
-            user_id=user_id,
-            role="user",
-            content=content,
-            max_messages=self.max_short_term_messages
-        )
+        # 优先使用Redis
+        if self._is_redis_available():
+            result = redis_client.append_customer_service_message(
+                user_id=user_id,
+                role="user",
+                content=content,
+                max_messages=self.max_short_term_messages
+            )
+            if result:
+                return True
+
+        # Redis不可用时降级到MySQL
+        return self.save_message_to_db(user_id=user_id, role="user", content=content)
 
     async def add_assistant_message(self, user_id: int, content: str) -> bool:
         """添加助手消息到短时记忆"""
-        return redis_client.append_customer_service_message(
-            user_id=user_id,
-            role="assistant",
-            content=content,
-            max_messages=self.max_short_term_messages
-        )
+        # 优先使用Redis
+        if self._is_redis_available():
+            result = redis_client.append_customer_service_message(
+                user_id=user_id,
+                role="assistant",
+                content=content,
+                max_messages=self.max_short_term_messages
+            )
+            if result:
+                return True
+
+        # Redis不可用时降级到MySQL
+        return self.save_message_to_db(user_id=user_id, role="assistant", content=content)
 
     def get_short_term_context(self, user_id: int) -> List[dict]:
         """获取短时记忆上下文（用于连续对话）"""
-        context = redis_client.get_customer_service_context(user_id)
-        return context or []
+        redis_available = self._is_redis_available()
+        print(f"[DEBUG] Redis可用: {redis_available}")
+
+        # 优先从Redis获取
+        if redis_available:
+            context = redis_client.get_customer_service_context(user_id)
+            print(f"[DEBUG] 从Redis获取上下文: {len(context) if context else 0} 条")
+            if context:
+                return context
+
+        # Redis不可用或为空时从MySQL获取
+        db_context = self.get_history_from_db(user_id=user_id, limit=self.max_short_term_messages)
+        print(f"[DEBUG] 从MySQL获取上下文: {len(db_context)} 条")
+        return db_context
 
     def clear_short_term(self, user_id: int) -> bool:
         """清除用户的短时记忆"""
-        return redis_client.clear_customer_service_context(user_id)
+        if self._is_redis_available():
+            return redis_client.clear_customer_service_context(user_id)
+        return True  # 如果Redis不可用，视为成功（数据在MySQL中）
 
     def refresh_ttl(self, user_id: int) -> bool:
         """刷新短时记忆的过期时间"""
-        return redis_client.extend_customer_service_ttl(user_id)
+        if self._is_redis_available():
+            return redis_client.extend_customer_service_ttl(user_id)
+        return True  # MySQL没有TTL概念
 
     # ============ 长期记忆（MySQL）============
 

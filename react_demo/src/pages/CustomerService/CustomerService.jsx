@@ -72,11 +72,42 @@ const QuickQuestionButton = ({ question, onClick }) => (
   </button>
 )
 
+// 确认对话框组件
+const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }) => {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600 mb-6">{message}</p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            取消
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            确认清除
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const CustomerService = () => {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
+  const [contextStatus, setContextStatus] = useState(null)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [clearing, setClearing] = useState(false)
   const messagesEndRef = useRef(null)
 
   const quickQuestions = [
@@ -87,13 +118,31 @@ const CustomerService = () => {
     '平台有哪些功能？'
   ]
 
+  const welcomeMessage = {
+    id: 1,
+    content: '您好！我是智能客服助手"小智"，很高兴为您服务。您可以问我关于平台使用的任何问题，例如：\n\n• 如何注册和登录\n• 如何发布和管理岗位\n• 如何与HR沟通\n• 如何发布产学研资源\n\n请问有什么可以帮助您的？',
+    isUser: false,
+    createdAt: new Date().toISOString()
+  }
+
   useEffect(() => {
     initChat()
+    loadContextStatus()
   }, [])
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  const loadContextStatus = async () => {
+    try {
+      const response = await customerServiceAPI.getContextStatus()
+      setContextStatus(response.data)
+    } catch (error) {
+      // 如果未登录或出错，忽略上下文状态
+      console.log('Context status not available')
+    }
+  }
 
   const initChat = async () => {
     try {
@@ -101,28 +150,28 @@ const CustomerService = () => {
       if (response.data?.length > 0) {
         setMessages(response.data)
       } else {
-        // Welcome message
-        setMessages([
-          {
-            id: 1,
-            content: '您好！我是智能客服助手，很高兴为您服务。您可以问我关于平台使用的任何问题，例如：\n\n• 如何注册和登录\n• 如何发布和管理岗位\n• 如何与HR沟通\n• 如何发布产学研资源\n\n请问有什么可以帮助您的？',
-            isUser: false,
-            createdAt: new Date().toISOString()
-          }
-        ])
+        setMessages([welcomeMessage])
       }
     } catch (error) {
       console.error('Failed to load chat history:', error)
-      setMessages([
-        {
-          id: 1,
-          content: '您好！我是智能客服助手，很高兴为您服务。请问有什么可以帮助您的？',
-          isUser: false,
-          createdAt: new Date().toISOString()
-        }
-      ])
+      setMessages([welcomeMessage])
     } finally {
       setInitialLoading(false)
+    }
+  }
+
+  const clearHistory = async () => {
+    setClearing(true)
+    try {
+      await customerServiceAPI.clearHistory()
+      setMessages([welcomeMessage])
+      setContextStatus(null)
+      setShowClearConfirm(false)
+    } catch (error) {
+      console.error('Failed to clear history:', error)
+      alert('清除失败，请稍后重试')
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -149,6 +198,9 @@ const CustomerService = () => {
         createdAt: new Date().toISOString()
       }
       setMessages(prev => [...prev, aiMessage])
+
+      // 更新上下文状态
+      loadContextStatus()
     } catch (error) {
       console.error('Failed to send message:', error)
       // Mock AI response for development
@@ -189,13 +241,41 @@ const CustomerService = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-purple-800 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-2xl">🤖</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">智能客服</h1>
+                <p className="text-purple-200 text-sm">24小时在线，随时为您解答</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">智能客服</h1>
-              <p className="text-purple-200 text-sm">24小时在线，随时为您解答</p>
+
+            {/* 操作按钮 */}
+            <div className="flex items-center gap-2">
+              {/* 上下文状态指示器 */}
+              {contextStatus && (
+                <div className="hidden sm:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-white/90 text-xs">
+                    记忆: {contextStatus.short_term_messages}条
+                  </span>
+                </div>
+              )}
+
+              {/* 清除历史按钮 */}
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                disabled={messages.length <= 1}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="清除对话历史"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span className="hidden sm:inline">清除</span>
+              </button>
             </div>
           </div>
         </div>
@@ -270,6 +350,25 @@ const CustomerService = () => {
           </div>
         </div>
       </div>
+
+      {/* 清除确认对话框 */}
+      <ConfirmDialog
+        isOpen={showClearConfirm}
+        onConfirm={clearHistory}
+        onCancel={() => setShowClearConfirm(false)}
+        title="清除对话历史"
+        message="确定要清除所有对话历史吗？此操作不可恢复。"
+      />
+
+      {/* 清除中遮罩 */}
+      {clearing && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
+            <span>正在清除...</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

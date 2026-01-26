@@ -223,13 +223,91 @@ class AIService:
             "HR上线后会尽快回复您。如有紧急问题，您可以通过平台客服获取帮助。"
         )
 
+    async def get_customer_service_response_with_context(
+        self,
+        message: str,
+        short_term_context: List[dict],
+        rag_context: str = ""
+    ) -> str:
+        """使用预获取的上下文生成智能客服回复
+
+        Args:
+            message: 用户消息
+            short_term_context: 短期记忆上下文（已获取）
+            rag_context: RAG长期记忆上下文（已获取）
+        """
+        system_prompt = self._get_customer_service_system_prompt()
+
+        # 添加 RAG 上下文
+        if rag_context:
+            system_prompt += f"\n\n{rag_context}\n\n请参考以上历史问答，为当前问题提供一致且准确的回答。"
+
+        try:
+            # 构建消息列表
+            messages = [{"role": "system", "content": system_prompt}]
+
+            # 添加短时记忆（最近对话历史）
+            if short_term_context:
+                for msg in short_term_context[-10:]:  # 最近10条消息
+                    messages.append(msg)
+
+            # 添加当前用户消息
+            messages.append({"role": "user", "content": message})
+
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.api_url,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "glm-4",
+                        "messages": messages,
+                        "temperature": 0.7,
+                        "max_tokens": 1000
+                    },
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            print(f"AI Service Error (Customer Service): {e}")
+            return self._get_customer_service_fallback(message)
+
+    def _get_customer_service_system_prompt(self) -> str:
+        """获取智能客服系统提示词"""
+        return """你是产学研智能交互平台的智能客服助手，名叫"小智"。
+
+## 平台简介
+产学研智能交互平台是一个连接高校学生、科研人员和企业的综合性服务平台。平台旨在促进产学研深度融合，帮助学生找到实习和就业机会，帮助企业对接优质人才和科研资源。
+
+## 平台主要功能
+1. **岗位招聘**：企业可以发布岗位信息，学生可以浏览岗位并与HR直接沟通
+2. **实时聊天**：学生和HR可以在线实时交流，HR离线时智能助手会自动回复
+3. **资源中心**：企业可以发布产学研合作资源（项目合作、实习机会、科研项目、产学研合作）
+4. **智能客服**：7x24小时在线解答用户问题
+5. **个人中心**：管理个人信息和历史记录
+
+## 用户类型
+- **学生用户**：可以浏览岗位、查看资源、与企业HR沟通
+- **企业用户**：可以发布岗位、发布资源、管理招聘流程
+
+## 回答要求
+1. 用友好、专业的语气回答用户问题
+2. 回答要简洁明了，使用Markdown格式分点说明
+3. **重要：结合之前的对话上下文，提供连贯的回答。如果用户之前问过问题，要记住并延续话题。**
+4. 如果问题与平台无关，礼貌地引导用户提问平台相关问题
+5. 如果不确定答案，建议用户联系平台管理员"""
+
     async def get_customer_service_response_with_rag(
         self,
         message: str,
         user_id: int,
         category: Optional[str] = None
     ) -> str:
-        """使用 RAG 增强 + 短时记忆的智能客服回复
+        """使用 RAG 增强 + 短时记忆的智能客服回复（旧版，保留兼容）
 
         Args:
             message: 用户消息

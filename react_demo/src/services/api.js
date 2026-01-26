@@ -72,7 +72,7 @@ export const resourcesAPI = {
 // Chat APIs
 export const chatAPI = {
   getConversations: () => api.get('/chat/conversations'),
-  getMessages: (conversationId) => api.get(`/chat/conversations/${conversationId}/messages`),
+  getMessages: (conversationId, params = {}) => api.get(`/chat/conversations/${conversationId}/messages`, { params }),
   sendMessage: (conversationId, data) => api.post(`/chat/conversations/${conversationId}/messages`, data),
   createConversation: (data) => api.post('/chat/conversations', data),
   getOrCreateConversation: (targetUserId, jobId) => api.post('/chat/conversations/get-or-create', { targetUserId, jobId })
@@ -81,12 +81,20 @@ export const chatAPI = {
 // Customer Service API
 export const customerServiceAPI = {
   sendMessage: (message) => api.post('/customer-service/chat', { message }),
-  getHistory: () => api.get('/customer-service/history')
+  getHistory: () => api.get('/customer-service/history'),
+  clearHistory: () => api.delete('/customer-service/history'),
+  getContextStatus: () => api.get('/customer-service/context-status')
 }
 
 // Summary API
 export const summaryAPI = {
   getConversationSummary: (conversationId) => api.get(`/summary/conversations/${conversationId}`)
+}
+
+// WebSocket helper
+export const createWebSocket = (token) => {
+  const wsUrl = `ws://localhost:8000/ws?token=${token}`
+  return new WebSocket(wsUrl)
 }
 
 export default api

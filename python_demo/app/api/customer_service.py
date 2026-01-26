@@ -30,16 +30,39 @@ async def chat_with_ai(
 
     if current_user:
         # 登录用户：使用完整的上下文管理（Redis短期记忆 + SQL RAG长期记忆）
-        ai_response = await ai_service.get_customer_service_response_with_rag(
+
+        # 1. 先获取历史上下文（在保存当前消息之前）
+        short_term_context = customer_service_memory.get_short_term_context(current_user.id)
+        print(f"[DEBUG] User {current_user.id} - 历史上下文: {len(short_term_context)} 条消息")
+        if short_term_context:
+            print(f"[DEBUG] 最近3条: {short_term_context[-3:]}")
+
+        # 2. 立即保存当前用户消息到短期记忆
+        save_result = await customer_service_memory.add_user_message(current_user.id, request.message)
+        print(f"[DEBUG] 保存用户消息结果: {save_result}")
+
+        # 3. 获取RAG上下文
+        rag_context = await customer_service_memory.build_rag_context(
+            query=request.message,
+            category=None,
+            max_pairs=3
+        )
+        print(f"[DEBUG] RAG上下文长度: {len(rag_context) if rag_context else 0}")
+
+        # 4. 调用AI生成回复（传入已获取的上下文）
+        ai_response = await ai_service.get_customer_service_response_with_context(
             message=request.message,
-            user_id=current_user.id,
-            category=None  # 可以根据问题自动分类
+            short_term_context=short_term_context,
+            rag_context=rag_context
         )
 
-        # 刷新上下文TTL
+        # 5. 保存AI回复到短期记忆
+        await customer_service_memory.add_assistant_message(current_user.id, ai_response)
+
+        # 6. 刷新上下文TTL
         customer_service_memory.refresh_ttl(current_user.id)
 
-        # 同时保存到数据库长期记忆表
+        # 7. 同时保存到数据库长期记忆表（备份）
         customer_service_memory.save_message_to_db(
             user_id=current_user.id,
             role="user",

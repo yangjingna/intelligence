@@ -3,6 +3,7 @@
 聊天记忆服务
 - 短时记忆：Redis（存储最近的对话上下文，用于连续对话）
 - 长期记忆：MySQL（存储历史问答对，用于RAG检索）
+- 降级方案：当Redis不可用时，使用MySQL作为备选
 """
 from typing import List, Optional, Tuple
 from ..core.redis_client import redis_client
@@ -10,10 +11,14 @@ from .sql_rag_service import sql_rag_service
 
 
 class MemoryService:
-    """聊天记忆管理服务"""
+    """聊天记忆管理服务（带降级支持）"""
 
     def __init__(self):
         self.max_short_term_messages = 10  # 短时记忆最大消息数
+
+    def _is_redis_available(self) -> bool:
+        """检查Redis是否可用"""
+        return redis_client.is_connected
 
     async def add_user_message(
         self,
@@ -21,11 +26,23 @@ class MemoryService:
         content: str
     ) -> bool:
         """添加用户消息到短时记忆"""
-        return redis_client.append_message(
+        # 优先使用Redis
+        if self._is_redis_available():
+            result = redis_client.append_message(
+                conversation_id=conversation_id,
+                role="user",
+                content=content,
+                max_messages=self.max_short_term_messages
+            )
+            if result:
+                return True
+
+        # Redis不可用时降级到MySQL
+        return sql_rag_service.save_chat_to_db(
             conversation_id=conversation_id,
             role="user",
             content=content,
-            max_messages=self.max_short_term_messages
+            message_type="text"
         )
 
     async def add_assistant_message(
@@ -36,17 +53,39 @@ class MemoryService:
     ) -> bool:
         """添加助手/HR消息到短时记忆"""
         role = "assistant"
-        return redis_client.append_message(
+
+        # 优先使用Redis
+        if self._is_redis_available():
+            result = redis_client.append_message(
+                conversation_id=conversation_id,
+                role=role,
+                content=content,
+                max_messages=self.max_short_term_messages
+            )
+            if result:
+                return True
+
+        # Redis不可用时降级到MySQL
+        return sql_rag_service.save_chat_to_db(
             conversation_id=conversation_id,
             role=role,
             content=content,
-            max_messages=self.max_short_term_messages
+            message_type="ai_response" if is_ai else "text"
         )
 
     def get_short_term_context(self, conversation_id: int) -> List[dict]:
         """获取短时记忆上下文（用于连续对话）"""
-        context = redis_client.get_chat_context(conversation_id)
-        return context or []
+        # 优先从Redis获取
+        if self._is_redis_available():
+            context = redis_client.get_chat_context(conversation_id)
+            if context:
+                return context
+
+        # Redis不可用或为空时从MySQL获取
+        return sql_rag_service.get_chat_history(
+            conversation_id=conversation_id,
+            limit=self.max_short_term_messages
+        )
 
     async def get_combined_context(
         self,

@@ -110,7 +110,13 @@ const Chat = () => {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [messageOffset, setMessageOffset] = useState(0)
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
+
+  const MESSAGE_LIMIT = 50
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -205,41 +211,80 @@ const Chat = () => {
     }
   }
 
-  const fetchMessages = async (conversationId) => {
+  const fetchMessages = async (conversationId, isLoadMore = false) => {
     try {
-      const response = await chatAPI.getMessages(conversationId)
-      setMessages(response.data || [])
+      const offset = isLoadMore ? messageOffset : 0
+      const response = await chatAPI.getMessages(conversationId, {
+        skip: offset,
+        limit: MESSAGE_LIMIT
+      })
+
+      const newMessages = response.data || []
+
+      if (isLoadMore) {
+        // 加载更多时，将新消息添加到前面
+        setMessages(prev => [...newMessages, ...prev])
+      } else {
+        setMessages(newMessages)
+      }
+
+      // 判断是否还有更多消息
+      setHasMore(newMessages.length >= MESSAGE_LIMIT)
+      setMessageOffset(offset + newMessages.length)
     } catch (error) {
       console.error('Failed to fetch messages:', error)
       // Mock messages
-      setMessages([
-        {
-          id: 1,
-          content: '您好，我对贵公司的岗位很感兴趣',
-          senderId: user?.id,
-          type: MESSAGE_TYPES.TEXT,
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 2,
-          content: '感谢您的关注！请问您有相关工作经验吗？',
-          senderId: 101,
-          type: MESSAGE_TYPES.TEXT,
-          createdAt: new Date(Date.now() - 3000000).toISOString()
-        },
-        {
-          id: 3,
-          content: '您好，HR 当前离线。根据您的问题，我来为您解答：这个岗位主要负责前端产品开发，需要熟悉 React 或 Vue 框架。如需更多信息，HR 上线后会尽快回复您。',
-          senderId: 101,
-          type: MESSAGE_TYPES.AI_RESPONSE,
-          createdAt: new Date(Date.now() - 1800000).toISOString()
-        }
-      ])
+      if (!isLoadMore) {
+        setMessages([
+          {
+            id: 1,
+            content: '您好，我对贵公司的岗位很感兴趣',
+            senderId: user?.id,
+            type: MESSAGE_TYPES.TEXT,
+            createdAt: new Date(Date.now() - 3600000).toISOString()
+          },
+          {
+            id: 2,
+            content: '感谢您的关注！请问您有相关工作经验吗？',
+            senderId: 101,
+            type: MESSAGE_TYPES.TEXT,
+            createdAt: new Date(Date.now() - 3000000).toISOString()
+          },
+          {
+            id: 3,
+            content: '您好，HR 当前离线。根据您的问题，我来为您解答：这个岗位主要负责前端产品开发，需要熟悉 React 或 Vue 框架。如需更多信息，HR 上线后会尽快回复您。',
+            senderId: 101,
+            type: MESSAGE_TYPES.AI_RESPONSE,
+            createdAt: new Date(Date.now() - 1800000).toISOString()
+          }
+        ])
+        setHasMore(false)
+      }
     }
+  }
+
+  const loadMoreMessages = async () => {
+    if (!currentConversation || loadingMore || !hasMore) return
+
+    setLoadingMore(true)
+    const scrollContainer = messagesContainerRef.current
+    const previousScrollHeight = scrollContainer?.scrollHeight || 0
+
+    await fetchMessages(currentConversation.id, true)
+
+    // 保持滚动位置
+    if (scrollContainer) {
+      const newScrollHeight = scrollContainer.scrollHeight
+      scrollContainer.scrollTop = newScrollHeight - previousScrollHeight
+    }
+
+    setLoadingMore(false)
   }
 
   const selectConversation = (conversation) => {
     setCurrentConversation(conversation)
+    setMessageOffset(0)
+    setHasMore(true)
     fetchMessages(conversation.id)
   }
 
@@ -367,7 +412,27 @@ const Chat = () => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6">
+              {/* 加载更多按钮 */}
+              {hasMore && messages.length >= MESSAGE_LIMIT && (
+                <div className="flex justify-center mb-4">
+                  <button
+                    onClick={loadMoreMessages}
+                    disabled={loadingMore}
+                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></span>
+                        加载中...
+                      </span>
+                    ) : (
+                      '加载更多消息'
+                    )}
+                  </button>
+                </div>
+              )}
+
               {messages.map((message) => (
                 <MessageBubble
                   key={message.id}
