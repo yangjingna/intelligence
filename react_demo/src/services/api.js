@@ -50,7 +50,8 @@ api.interceptors.response.use(
         'knowledge',
         'resources',  // Resources has both public and auth modes
         'jobs',       // Jobs has both public and auth modes
-        'auth/profile' // Profile fetch might fail if token expired
+        'auth/profile', // Profile fetch might fail if token expired
+        'summary'     // Summary API
       ]
 
       const shouldSkipRedirect = noRedirectUrls.some(path => url.includes(path))
@@ -110,9 +111,9 @@ export const customerServiceAPI = {
   getSlots: () => api.get('/customer-service/slots')
 }
 
-// Summary API
+// Summary API (需要更长的超时时间，因为AI处理需要时间)
 export const summaryAPI = {
-  getConversationSummary: (conversationId) => api.get(`/summary/conversations/${conversationId}`)
+  getConversationSummary: (conversationId) => api.get(`/summary/conversations/${conversationId}`, { timeout: 60000 })
 }
 
 // Knowledge API

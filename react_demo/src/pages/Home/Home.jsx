@@ -17,19 +17,51 @@ const FeatureCard = ({ to, icon, title, description, color }) => (
 const Home = () => {
   const { isAuthenticated, user } = useUserStore()
 
-  const features = [
+  // 根据用户角色显示不同的功能
+  const isEnterprise = user?.role === 'enterprise'
+
+  const features = isEnterprise ? [
     {
       to: '/jobs',
-      icon: '💼',
-      title: '学生-企业直聊',
-      description: '浏览岗位信息，与HR实时沟通，快速对接就业机会',
+      icon: '📚',
+      title: '资源发布',
+      description: '发布和管理招聘信息，吸引优秀学生人才',
       color: 'bg-blue-100'
     },
     {
-      to: '/resources',
+      to: '/chat',
+      icon: '💬',
+      title: '企业直聊',
+      description: '查看学生咨询消息，与学生实时沟通',
+      color: 'bg-green-100'
+    },
+    {
+      to: '/knowledge',
+      icon: '📖',
+      title: '知识库管理',
+      description: '管理FAQ知识库，HR离线时AI自动回答学生问题',
+      color: 'bg-yellow-100'
+    },
+    {
+      to: '/customer-service',
+      icon: '🤖',
+      title: '智能客服',
+      description: '24小时在线智能客服，解答平台使用问题',
+      color: 'bg-purple-100'
+    }
+  ] : [
+    {
+      to: '/jobs',
       icon: '📚',
-      title: '资源发布/匹配',
-      description: '发布和浏览产学研合作资源，精准匹配合作需求',
+      title: '资源匹配',
+      description: '浏览企业发布的招聘信息，点击发起沟通与HR对接',
+      color: 'bg-blue-100'
+    },
+    {
+      to: '/chat',
+      icon: '💬',
+      title: '企业直聊',
+      description: '查看与企业HR的聊天会话，继续沟通交流',
       color: 'bg-green-100'
     },
     {

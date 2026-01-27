@@ -31,8 +31,16 @@ const Header = () => {
                 to="/jobs"
                 className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                {user?.role === 'enterprise' ? '岗位发布' : '岗位匹配'}
+                {user?.role === 'enterprise' ? '资源发布' : '资源匹配'}
               </Link>
+              {isAuthenticated && (
+                <Link
+                  to="/chat"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  企业直聊
+                </Link>
+              )}
               <Link
                 to="/customer-service"
                 className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
@@ -53,12 +61,6 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/chat"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  消息
-                </Link>
                 <Link
                   to="/profile"
                   className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"

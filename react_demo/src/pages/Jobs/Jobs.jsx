@@ -68,7 +68,7 @@ const JobCard = ({ job, onStartChat, isEnterprise }) => {
             onClick={() => onStartChat(job)}
             className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
-            立即沟通
+            发起沟通
           </button>
         )}
 
@@ -77,7 +77,7 @@ const JobCard = ({ job, onStartChat, isEnterprise }) => {
             to={`/jobs/edit/${job.id}`}
             className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
           >
-            编辑岗位
+            编辑资源
           </Link>
         )}
       </div>
@@ -153,10 +153,10 @@ const Jobs = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEnterprise ? '岗位管理' : '岗位招聘'}
+            {isEnterprise ? '资源发布' : '资源匹配'}
           </h1>
           <p className="text-gray-600 mt-1">
-            {isEnterprise ? '管理您发布的岗位信息' : '发现适合您的工作机会'}
+            {isEnterprise ? '发布和管理您的招聘信息' : '发现适合您的工作机会'}
           </p>
         </div>
         {isEnterprise && (
@@ -164,7 +164,7 @@ const Jobs = () => {
             to="/jobs/create"
             className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
-            发布岗位
+            发布资源
           </Link>
         )}
       </div>
@@ -177,7 +177,7 @@ const Jobs = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="搜索岗位名称或公司..."
+              placeholder="搜索资源名称或公司..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -211,7 +211,7 @@ const Jobs = () => {
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              全部岗位
+              全部资源
             </button>
             <button
               onClick={() => setShowMyJobs(true)}
@@ -221,7 +221,7 @@ const Jobs = () => {
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              我的岗位
+              我的资源
             </button>
           </div>
         )}
@@ -235,7 +235,7 @@ const Jobs = () => {
       ) : filteredJobs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 text-5xl mb-4">📋</div>
-          <p className="text-gray-600">暂无岗位信息</p>
+          <p className="text-gray-600">暂无资源信息</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
