@@ -6,6 +6,7 @@ from ..core.database import get_db
 from ..core.security import get_current_user
 from ..models.user import User, UserRole
 from ..models.job import Job
+from ..models.resource import Resource
 from ..models.conversation import Conversation, Message, MessageType
 from ..schemas.chat import ConversationResponse, MessageCreate, MessageResponse, GetOrCreateConversation
 from ..services.websocket_manager import ws_manager
@@ -35,6 +36,11 @@ async def get_conversations(
             job = db.query(Job).filter(Job.id == conv.job_id).first()
             job_title = job.title if job else None
 
+        resource_title = None
+        if conv.resource_id:
+            resource = db.query(Resource).filter(Resource.id == conv.resource_id).first()
+            resource_title = resource.title if resource else None
+
         # Count unread messages
         unread_count = db.query(Message).filter(
             Message.conversation_id == conv.id,
@@ -47,6 +53,8 @@ async def get_conversations(
             target_user_name=target_user.name if target_user else None,
             job_id=conv.job_id,
             job_title=job_title,
+            resource_id=conv.resource_id,
+            resource_title=resource_title,
             last_message=conv.last_message,
             last_message_time=conv.last_message_time,
             unread_count=unread_count
@@ -61,20 +69,40 @@ async def get_or_create_conversation(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Check if conversation exists
-    conv = db.query(Conversation).filter(
-        (
-            ((Conversation.user1_id == current_user.id) & (Conversation.user2_id == data.targetUserId)) |
-            ((Conversation.user1_id == data.targetUserId) & (Conversation.user2_id == current_user.id))
-        ),
-        Conversation.job_id == data.jobId
-    ).first()
+    # Check if conversation exists (for job or resource)
+    if data.jobId:
+        conv = db.query(Conversation).filter(
+            (
+                ((Conversation.user1_id == current_user.id) & (Conversation.user2_id == data.targetUserId)) |
+                ((Conversation.user1_id == data.targetUserId) & (Conversation.user2_id == current_user.id))
+            ),
+            Conversation.job_id == data.jobId
+        ).first()
+    elif data.resourceId:
+        conv = db.query(Conversation).filter(
+            (
+                ((Conversation.user1_id == current_user.id) & (Conversation.user2_id == data.targetUserId)) |
+                ((Conversation.user1_id == data.targetUserId) & (Conversation.user2_id == current_user.id))
+            ),
+            Conversation.resource_id == data.resourceId
+        ).first()
+    else:
+        # General conversation without job or resource
+        conv = db.query(Conversation).filter(
+            (
+                ((Conversation.user1_id == current_user.id) & (Conversation.user2_id == data.targetUserId)) |
+                ((Conversation.user1_id == data.targetUserId) & (Conversation.user2_id == current_user.id))
+            ),
+            Conversation.job_id == None,
+            Conversation.resource_id == None
+        ).first()
 
     if not conv:
         conv = Conversation(
             user1_id=current_user.id,
             user2_id=data.targetUserId,
-            job_id=data.jobId
+            job_id=data.jobId,
+            resource_id=data.resourceId
         )
         db.add(conv)
         db.commit()
@@ -83,7 +111,9 @@ async def get_or_create_conversation(
     target_user = db.query(User).filter(User.id == data.targetUserId).first()
 
     job_title = None
-    target_user_name = "HR"  # Default name if user doesn't exist
+    resource_title = None
+    target_user_name = "联系人"  # Default name if user doesn't exist
+
     if conv.job_id:
         job = db.query(Job).filter(Job.id == conv.job_id).first()
         if job:
@@ -91,6 +121,14 @@ async def get_or_create_conversation(
             # Use job's hr_name if target user doesn't exist
             if not target_user and hasattr(job, 'hr_name'):
                 target_user_name = job.hr_name
+
+    if conv.resource_id:
+        resource = db.query(Resource).filter(Resource.id == conv.resource_id).first()
+        if resource:
+            resource_title = resource.title
+            # Use resource's contact_name if target user doesn't exist
+            if not target_user and resource.contact_name:
+                target_user_name = resource.contact_name
 
     if target_user:
         target_user_name = target_user.name
@@ -101,6 +139,8 @@ async def get_or_create_conversation(
         target_user_name=target_user_name,
         job_id=conv.job_id,
         job_title=job_title,
+        resource_id=conv.resource_id,
+        resource_title=resource_title,
         last_message=conv.last_message,
         last_message_time=conv.last_message_time,
         unread_count=0
@@ -220,21 +260,25 @@ async def send_message(
 
     # Send AI response if target user doesn't exist or is offline (only for student messages)
     if not is_hr_reply and (not target_user or not ws_manager.is_user_online(target_user_id)):
-        # Get job context for AI
-        job_context = None
+        # Get job or resource context for AI
+        context = None
         job_id = None
         if conv.job_id:
             job = db.query(Job).filter(Job.id == conv.job_id).first()
             if job:
                 job_id = job.id
-                job_context = f"岗位名称: {job.title}\n公司: {job.company}\n薪资: {job.salary if hasattr(job, 'salary') else '面议'}\n地点: {job.location if hasattr(job, 'location') else '未知'}\n岗位描述: {job.description}"
+                context = f"岗位名称: {job.title}\n公司: {job.company}\n薪资: {job.salary if hasattr(job, 'salary') else '面议'}\n地点: {job.location if hasattr(job, 'location') else '未知'}\n岗位描述: {job.description}"
+        elif conv.resource_id:
+            resource = db.query(Resource).filter(Resource.id == conv.resource_id).first()
+            if resource:
+                context = f"资源名称: {resource.title}\n公司: {resource.company}\n资源类型: {resource.type.value if resource.type else '未知'}\n资源描述: {resource.description}\n联系人: {resource.contact_name or '未知'}"
 
         # 使用 RAG 智能体获取回复
         ai_response, used_rag = await rag_agent.get_intelligent_response(
             user_message=message_data.content,
             conversation_id=conversation_id,
             job_id=job_id,
-            job_context=job_context
+            job_context=context
         )
 
         # Save AI message

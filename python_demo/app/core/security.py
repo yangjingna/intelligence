@@ -47,18 +47,23 @@ async def get_current_user_optional(
     token: Optional[str] = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
+    print(f"[AUTH] get_current_user_optional - token存在: {token is not None}")
     if not token:
+        print("[AUTH] 没有提供token")
         return None
 
     payload = decode_token(token)
     if payload is None:
+        print("[AUTH] token解析失败")
         return None
 
     user_id = payload.get("sub")
     if user_id is None:
+        print("[AUTH] token中没有sub字段")
         return None
 
     user = db.query(User).filter(User.id == user_id).first()
+    print(f"[AUTH] 用户查询结果: {user.id if user else None}")
     return user
 
 

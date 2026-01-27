@@ -45,6 +45,14 @@ const Header = () => {
               >
                 智能客服
               </Link>
+              {user?.role === 'enterprise' && (
+                <Link
+                  to="/knowledge"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  知识库管理
+                </Link>
+              )}
             </nav>
           </div>
 

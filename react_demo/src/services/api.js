@@ -15,9 +15,26 @@ api.interceptors.request.use(
   (config) => {
     const storage = localStorage.getItem('user-storage')
     if (storage) {
-      const { state } = JSON.parse(storage)
-      if (state?.token) {
-        config.headers.Authorization = `Bearer ${state.token}`
+      try {
+        const parsed = JSON.parse(storage)
+        const token = parsed?.state?.token
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`
+          // Debug: 只在customer-service请求时打印
+          if (config.url?.includes('customer-service')) {
+            console.log('[API] Token已添加到请求头')
+          }
+        } else {
+          if (config.url?.includes('customer-service')) {
+            console.log('[API] 警告: storage存在但token为空', parsed?.state)
+          }
+        }
+      } catch (e) {
+        console.error('[API] 解析storage失败:', e)
+      }
+    } else {
+      if (config.url?.includes('customer-service')) {
+        console.log('[API] 警告: localStorage中没有user-storage')
       }
     }
     return config
@@ -30,9 +47,21 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Don't redirect for customer-service and chat APIs - they handle errors themselves
       const url = error.config?.url || ''
-      if (!url.includes('customer-service') && !url.includes('chat')) {
+      // List of URLs that should NOT trigger a login redirect on 401
+      // These endpoints either handle auth optionally or manage errors themselves
+      const noRedirectUrls = [
+        'customer-service',
+        'chat',
+        'knowledge',
+        'resources',  // Resources has both public and auth modes
+        'jobs',       // Jobs has both public and auth modes
+        'auth/profile' // Profile fetch might fail if token expired
+      ]
+
+      const shouldSkipRedirect = noRedirectUrls.some(path => url.includes(path))
+
+      if (!shouldSkipRedirect) {
         localStorage.removeItem('user-storage')
         window.location.href = '/login'
       }
@@ -75,7 +104,7 @@ export const chatAPI = {
   getMessages: (conversationId, params = {}) => api.get(`/chat/conversations/${conversationId}/messages`, { params }),
   sendMessage: (conversationId, data) => api.post(`/chat/conversations/${conversationId}/messages`, data),
   createConversation: (data) => api.post('/chat/conversations', data),
-  getOrCreateConversation: (targetUserId, jobId) => api.post('/chat/conversations/get-or-create', { targetUserId, jobId })
+  getOrCreateConversation: (targetUserId, jobId, resourceId = null) => api.post('/chat/conversations/get-or-create', { targetUserId, jobId, resourceId })
 }
 
 // Customer Service API
@@ -83,12 +112,24 @@ export const customerServiceAPI = {
   sendMessage: (message) => api.post('/customer-service/chat', { message }),
   getHistory: () => api.get('/customer-service/history'),
   clearHistory: () => api.delete('/customer-service/history'),
-  getContextStatus: () => api.get('/customer-service/context-status')
+  getContextStatus: () => api.get('/customer-service/context-status'),
+  getSlots: () => api.get('/customer-service/slots')
 }
 
 // Summary API
 export const summaryAPI = {
   getConversationSummary: (conversationId) => api.get(`/summary/conversations/${conversationId}`)
+}
+
+// Knowledge API
+export const knowledgeAPI = {
+  getKnowledge: (params) => api.get('/knowledge', { params }),
+  getKnowledgeItem: (id) => api.get(`/knowledge/${id}`),
+  createKnowledge: (data) => api.post('/knowledge', data),
+  updateKnowledge: (id, data) => api.put(`/knowledge/${id}`, data),
+  deleteKnowledge: (id) => api.delete(`/knowledge/${id}`),
+  getStats: () => api.get('/knowledge/stats'),
+  getCategories: () => api.get('/knowledge/categories')
 }
 
 // WebSocket helper

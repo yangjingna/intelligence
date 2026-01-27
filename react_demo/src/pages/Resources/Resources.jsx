@@ -20,6 +20,10 @@ const resourceTypeColors = {
 }
 
 const ResourceCard = ({ resource, onContact, isEnterprise }) => {
+  // 兼容后端返回的 snake_case 字段名
+  const contactName = resource.contact_name || resource.contactName || '联系人'
+  const createdAt = resource.created_at || resource.createdAt
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
@@ -50,7 +54,7 @@ const ResourceCard = ({ resource, onContact, isEnterprise }) => {
       </div>
 
       <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-        <span>发布于 {formatDate(resource.createdAt)}</span>
+        <span>发布于 {formatDate(createdAt)}</span>
         {resource.deadline && (
           <span className="text-orange-500">截止：{formatDate(resource.deadline)}</span>
         )}
@@ -60,10 +64,10 @@ const ResourceCard = ({ resource, onContact, isEnterprise }) => {
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
             <span className="text-blue-600 text-sm font-medium">
-              {resource.contactName?.charAt(0) || 'C'}
+              {contactName.charAt(0)}
             </span>
           </div>
-          <span className="text-sm text-gray-600">{resource.contactName || '联系人'}</span>
+          <span className="text-sm text-gray-600">{contactName}</span>
         </div>
 
         {!isEnterprise ? (
@@ -101,90 +105,25 @@ const Resources = () => {
     fetchResources()
   }, [showMyResources])
 
-  // 默认资源数据
-  const defaultResources = [
-    {
-      id: 1,
-      title: '智能制造产学研合作项目',
-      type: RESOURCE_TYPES.COOPERATION,
-      company: '科技创新集团',
-      description: '寻求高校合作，共同开展智能制造领域的技术研发，包括机器人控制、视觉识别、智能检测等方向。提供充足研发经费和实验设备。',
-      tags: ['智能制造', '机器人', '产学研'],
-      contactName: '王工程师',
-      contactId: 201,
-      createdAt: new Date().toISOString(),
-      deadline: new Date(Date.now() + 30 * 24 * 3600000).toISOString()
-    },
-    {
-      id: 2,
-      title: '大数据分析实习生招募',
-      type: RESOURCE_TYPES.INTERNSHIP,
-      company: '数据科技有限公司',
-      description: '招募数据科学相关专业的实习生，参与公司核心数据分析项目。提供实习补贴，表现优秀者可转正。',
-      tags: ['大数据', '数据分析', 'Python'],
-      contactName: '李HR',
-      contactId: 202,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 3,
-      title: 'AI应用研究联合项目',
-      type: RESOURCE_TYPES.RESEARCH,
-      company: '人工智能研究院',
-      description: '与高校联合开展人工智能应用研究，涉及自然语言处理、计算机视觉等前沿领域。可提供联合培养博士生机会。',
-      tags: ['AI', 'NLP', '计算机视觉'],
-      contactName: '陈教授',
-      contactId: 203,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 4,
-      title: '新能源汽车技术合作',
-      type: RESOURCE_TYPES.PROJECT,
-      company: '新能源汽车科技',
-      description: '寻求电池管理系统、电机控制等方向的技术合作，共同开发新一代新能源汽车核心技术。',
-      tags: ['新能源', '汽车', '电池技术'],
-      contactName: '刘工程师',
-      contactId: 204,
-      createdAt: new Date().toISOString(),
-      deadline: new Date(Date.now() + 60 * 24 * 3600000).toISOString()
-    },
-    {
-      id: 5,
-      title: '区块链技术研究实习',
-      type: RESOURCE_TYPES.INTERNSHIP,
-      company: '金融科技集团',
-      description: '招募区块链、密码学相关专业学生，参与分布式账本技术研究与应用开发。',
-      tags: ['区块链', '密码学', 'Go'],
-      contactName: '张经理',
-      contactId: 205,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 6,
-      title: '医疗AI影像诊断系统',
-      type: RESOURCE_TYPES.RESEARCH,
-      company: '智慧医疗研究中心',
-      description: '联合开发医疗影像AI辅助诊断系统，涉及CT、MRI图像分析，寻求医学院校和计算机学院合作。',
-      tags: ['医疗AI', '图像识别', '深度学习'],
-      contactName: '吴研究员',
-      contactId: 206,
-      createdAt: new Date().toISOString(),
-      deadline: new Date(Date.now() + 45 * 24 * 3600000).toISOString()
-    }
-  ]
-
   const fetchResources = async () => {
     setLoading(true)
     try {
-      const response = showMyResources && isEnterprise
-        ? await resourcesAPI.getMyResources()
-        : await resourcesAPI.getResources({ search: searchTerm, type: filterType })
-      const data = response.data || []
-      setResources(data.length > 0 ? data : defaultResources)
+      let response
+      if (showMyResources && isEnterprise) {
+        try {
+          response = await resourcesAPI.getMyResources()
+        } catch (myResourcesError) {
+          console.warn('Failed to fetch my resources, falling back to all:', myResourcesError)
+          setShowMyResources(false)
+          response = await resourcesAPI.getResources({ search: searchTerm, type: filterType })
+        }
+      } else {
+        response = await resourcesAPI.getResources({ search: searchTerm, type: filterType })
+      }
+      setResources(response.data || [])
     } catch (error) {
       console.error('Failed to fetch resources:', error)
-      setResources(defaultResources)
+      setResources([])
     } finally {
       setLoading(false)
     }
@@ -195,7 +134,9 @@ const Resources = () => {
       navigate('/login')
       return
     }
-    navigate(`/chat?resourceId=${resource.id}&contactId=${resource.contactId}`)
+    // 兼容后端返回的 contact_id 和默认数据的 contactId
+    const contactId = resource.contact_id || resource.contactId || resource.publisher_id
+    navigate(`/chat?resourceId=${resource.id}&contactId=${contactId}`)
   }
 
   const handleSearch = (e) => {

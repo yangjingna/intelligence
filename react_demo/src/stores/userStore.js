@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 const useUserStore = create(
   persist(
@@ -7,6 +7,9 @@ const useUserStore = create(
       user: null,
       token: null,
       isAuthenticated: false,
+      _hasHydrated: false,
+
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       login: (userData, token) => set({
         user: userData,
@@ -31,9 +34,32 @@ const useUserStore = create(
       isEnterprise: () => get().user?.role === 'enterprise'
     }),
     {
-      name: 'user-storage'
+      name: 'user-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated
+      }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('[UserStore] Hydration error:', error)
+        }
+        // Always set hydrated to true after rehydration attempt
+        useUserStore.setState({ _hasHydrated: true })
+      }
     }
   )
 )
+
+// Also set hydrated immediately if storage is empty or on initial load
+if (typeof window !== 'undefined') {
+  // Ensure hydration flag is set after a short delay as fallback
+  setTimeout(() => {
+    if (!useUserStore.getState()._hasHydrated) {
+      useUserStore.setState({ _hasHydrated: true })
+    }
+  }, 100)
+}
 
 export default useUserStore

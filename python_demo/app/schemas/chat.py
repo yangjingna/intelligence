@@ -28,6 +28,7 @@ class ConversationCreate(BaseModel):
 class GetOrCreateConversation(BaseModel):
     targetUserId: int
     jobId: Optional[int] = None
+    resourceId: Optional[int] = None
 
 
 class ConversationResponse(BaseModel):
@@ -36,6 +37,8 @@ class ConversationResponse(BaseModel):
     target_user_name: Optional[str] = None
     job_id: Optional[int] = None
     job_title: Optional[str] = None
+    resource_id: Optional[int] = None
+    resource_title: Optional[str] = None
     last_message: Optional[str] = None
     last_message_time: Optional[datetime] = None
     unread_count: int = 0

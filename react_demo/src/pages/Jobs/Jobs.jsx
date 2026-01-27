@@ -5,6 +5,11 @@ import useUserStore from '../../stores/userStore'
 import { formatDate } from '../../utils/helpers'
 
 const JobCard = ({ job, onStartChat, isEnterprise }) => {
+  // 兼容后端返回的 snake_case 字段名
+  const hrName = job.hr_name || job.hrName || 'HR'
+  const hrOnline = job.hr_online ?? job.hrOnline ?? false
+  const createdAt = job.created_at || job.createdAt
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
@@ -33,26 +38,26 @@ const JobCard = ({ job, onStartChat, isEnterprise }) => {
           <span>{job.location}</span>
           <span>{job.experience}</span>
         </div>
-        <span>发布于 {formatDate(job.createdAt)}</span>
+        <span>发布于 {formatDate(createdAt)}</span>
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
             <span className="text-blue-600 text-sm font-medium">
-              {job.hrName?.charAt(0) || 'H'}
+              {hrName.charAt(0)}
             </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{job.hrName || 'HR'}</p>
+            <p className="text-sm font-medium text-gray-900">{hrName}</p>
             <div className="flex items-center gap-1">
               <span
                 className={`w-2 h-2 rounded-full ${
-                  job.hrOnline ? 'bg-green-500' : 'bg-gray-400'
+                  hrOnline ? 'bg-green-500' : 'bg-gray-400'
                 }`}
               />
               <span className="text-xs text-gray-500">
-                {job.hrOnline ? '在线' : '离线'}
+                {hrOnline ? '在线' : '离线'}
               </span>
             </div>
           </div>
@@ -95,105 +100,25 @@ const Jobs = () => {
     fetchJobs()
   }, [showMyJobs])
 
-  // 默认岗位数据
-  const defaultJobs = [
-    {
-      id: 1,
-      title: '前端开发工程师',
-      company: '科技创新有限公司',
-      salary: '15k-25k',
-      location: '北京',
-      experience: '1-3年',
-      description: '负责公司前端产品的开发与维护，参与技术方案设计，使用React/Vue等主流框架进行开发。',
-      tags: ['React', 'Vue', 'TypeScript'],
-      hrName: '张经理',
-      hrOnline: true,
-      hrId: 101,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 2,
-      title: '后端开发工程师',
-      company: '智慧教育科技',
-      salary: '18k-30k',
-      location: '上海',
-      experience: '3-5年',
-      description: '负责后端服务架构设计与开发，优化系统性能，保障服务稳定性。',
-      tags: ['Python', 'Java', 'MySQL'],
-      hrName: '李经理',
-      hrOnline: false,
-      hrId: 102,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 3,
-      title: '算法工程师',
-      company: '人工智能研究院',
-      salary: '25k-40k',
-      location: '深圳',
-      experience: '3-5年',
-      description: '从事机器学习算法研究与落地，参与大模型训练与优化。',
-      tags: ['Python', 'PyTorch', 'LLM'],
-      hrName: '王经理',
-      hrOnline: true,
-      hrId: 103,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 4,
-      title: '产品经理',
-      company: '互联网金融集团',
-      salary: '20k-35k',
-      location: '杭州',
-      experience: '3-5年',
-      description: '负责产品规划与设计，推动产品迭代，协调研发资源。',
-      tags: ['产品设计', 'Axure', '数据分析'],
-      hrName: '赵经理',
-      hrOnline: true,
-      hrId: 104,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 5,
-      title: '数据分析师',
-      company: '大数据科技公司',
-      salary: '15k-28k',
-      location: '北京',
-      experience: '1-3年',
-      description: '负责数据采集、清洗、分析，输出数据报告，支持业务决策。',
-      tags: ['SQL', 'Python', 'Tableau'],
-      hrName: '孙经理',
-      hrOnline: false,
-      hrId: 105,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 6,
-      title: '嵌入式软件工程师',
-      company: '智能硬件科技',
-      salary: '18k-32k',
-      location: '深圳',
-      experience: '3-5年',
-      description: '负责嵌入式系统软件开发，驱动程序编写，系统调试优化。',
-      tags: ['C/C++', 'Linux', 'ARM'],
-      hrName: '周经理',
-      hrOnline: true,
-      hrId: 106,
-      createdAt: new Date().toISOString()
-    }
-  ]
-
   const fetchJobs = async () => {
     setLoading(true)
     try {
-      const response = showMyJobs && isEnterprise
-        ? await jobsAPI.getMyJobs()
-        : await jobsAPI.getJobs({ search: searchTerm, location: filterLocation })
-      const data = response.data || []
-      setJobs(data.length > 0 ? data : defaultJobs)
+      let response
+      if (showMyJobs && isEnterprise) {
+        try {
+          response = await jobsAPI.getMyJobs()
+        } catch (myJobsError) {
+          console.warn('Failed to fetch my jobs, falling back to all:', myJobsError)
+          setShowMyJobs(false)
+          response = await jobsAPI.getJobs({ search: searchTerm, location: filterLocation })
+        }
+      } else {
+        response = await jobsAPI.getJobs({ search: searchTerm, location: filterLocation })
+      }
+      setJobs(response.data || [])
     } catch (error) {
       console.error('Failed to fetch jobs:', error)
-      setJobs(defaultJobs)
+      setJobs([])
     } finally {
       setLoading(false)
     }
@@ -204,7 +129,9 @@ const Jobs = () => {
       navigate('/login')
       return
     }
-    navigate(`/chat?jobId=${job.id}&hrId=${job.hrId}`)
+    // 兼容后端返回的 hr_id 字段名
+    const hrId = job.hrId || job.hr_id
+    navigate(`/chat?jobId=${job.id}&hrId=${hrId}`)
   }
 
   const handleSearch = (e) => {

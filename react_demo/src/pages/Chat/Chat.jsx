@@ -42,7 +42,16 @@ const MessageBubble = ({ message, isOwn }) => {
 }
 
 const ConversationItem = ({ conversation, isActive, onClick, onlineUsers }) => {
-  const isOnline = onlineUsers.has(conversation.targetUserId)
+  // 兼容后端返回的 snake_case 和前端 mock 数据的 camelCase
+  const targetUserId = conversation.targetUserId || conversation.target_user_id
+  const targetUserName = conversation.targetUserName || conversation.target_user_name
+  const lastMessage = conversation.lastMessage || conversation.last_message
+  const lastMessageTime = conversation.lastMessageTime || conversation.last_message_time
+  const unreadCount = conversation.unreadCount ?? conversation.unread_count ?? 0
+  const jobTitle = conversation.jobTitle || conversation.job_title
+  const resourceTitle = conversation.resourceTitle || conversation.resource_title
+
+  const isOnline = onlineUsers.has(targetUserId)
 
   return (
     <button
@@ -54,7 +63,7 @@ const ConversationItem = ({ conversation, isActive, onClick, onlineUsers }) => {
       <div className="relative">
         <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
           <span className="text-blue-600 font-medium">
-            {conversation.targetUserName?.charAt(0) || 'U'}
+            {targetUserName?.charAt(0) || 'U'}
           </span>
         </div>
         <span
@@ -66,24 +75,29 @@ const ConversationItem = ({ conversation, isActive, onClick, onlineUsers }) => {
       <div className="flex-1 text-left">
         <div className="flex justify-between items-center">
           <h4 className="font-medium text-gray-900">
-            {conversation.targetUserName || '用户'}
+            {targetUserName || '用户'}
           </h4>
           <span className="text-xs text-gray-400">
-            {conversation.lastMessageTime && formatTime(conversation.lastMessageTime)}
+            {lastMessageTime && formatTime(lastMessageTime)}
           </span>
         </div>
         <p className="text-sm text-gray-500 truncate">
-          {conversation.lastMessage || '暂无消息'}
+          {lastMessage || '暂无消息'}
         </p>
-        {conversation.jobTitle && (
+        {jobTitle && (
           <p className="text-xs text-blue-500 mt-1">
-            岗位：{conversation.jobTitle}
+            岗位：{jobTitle}
+          </p>
+        )}
+        {resourceTitle && (
+          <p className="text-xs text-green-500 mt-1">
+            资源：{resourceTitle}
           </p>
         )}
       </div>
-      {conversation.unreadCount > 0 && (
+      {unreadCount > 0 && (
         <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-          {conversation.unreadCount}
+          {unreadCount}
         </span>
       )}
     </button>
@@ -140,8 +154,13 @@ const Chat = () => {
   useEffect(() => {
     const jobId = searchParams.get('jobId')
     const hrId = searchParams.get('hrId')
+    const resourceId = searchParams.get('resourceId')
+    const contactId = searchParams.get('contactId')
+
     if (jobId && hrId) {
-      initConversationFromJob(jobId, hrId)
+      initConversation(hrId, jobId, null)
+    } else if (resourceId && contactId) {
+      initConversation(contactId, null, resourceId)
     }
   }, [searchParams])
 
@@ -201,9 +220,9 @@ const Chat = () => {
     }
   }
 
-  const initConversationFromJob = async (jobId, hrId) => {
+  const initConversation = async (targetUserId, jobId = null, resourceId = null) => {
     try {
-      const response = await chatAPI.getOrCreateConversation(hrId, jobId)
+      const response = await chatAPI.getOrCreateConversation(targetUserId, jobId, resourceId)
       setCurrentConversation(response.data)
       fetchMessages(response.data.id)
     } catch (error) {
@@ -332,8 +351,14 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // 兼容后端返回的 snake_case 和前端 mock 数据的 camelCase
+  const currentTargetUserId = currentConversation?.targetUserId || currentConversation?.target_user_id
+  const currentTargetUserName = currentConversation?.targetUserName || currentConversation?.target_user_name
+  const currentJobTitle = currentConversation?.jobTitle || currentConversation?.job_title
+  const currentResourceTitle = currentConversation?.resourceTitle || currentConversation?.resource_title
+
   const isOnline = currentConversation
-    ? onlineUsers.has(currentConversation.targetUserId)
+    ? onlineUsers.has(currentTargetUserId)
     : false
 
   return (
@@ -376,7 +401,7 @@ const Chat = () => {
                 <div className="relative">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-blue-600 font-medium">
-                      {currentConversation.targetUserName?.charAt(0) || 'U'}
+                      {currentTargetUserName?.charAt(0) || 'U'}
                     </span>
                   </div>
                   <span
@@ -387,7 +412,7 @@ const Chat = () => {
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900">
-                    {currentConversation.targetUserName}
+                    {currentTargetUserName || '联系人'}
                   </h3>
                   <p className="text-sm text-gray-500">
                     {isOnline ? '在线' : '离线 - 智能体将自动回复'}
@@ -395,9 +420,14 @@ const Chat = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {currentConversation.jobTitle && (
+                {currentJobTitle && (
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded-full">
-                    {currentConversation.jobTitle}
+                    {currentJobTitle}
+                  </span>
+                )}
+                {currentResourceTitle && (
+                  <span className="px-3 py-1 bg-green-100 text-green-600 text-sm rounded-full">
+                    {currentResourceTitle}
                   </span>
                 )}
                 <button

@@ -7,12 +7,22 @@ import Jobs, { JobForm } from './pages/Jobs'
 import Chat from './pages/Chat'
 import Resources, { ResourceForm } from './pages/Resources'
 import CustomerService from './pages/CustomerService'
+import Knowledge, { KnowledgeForm } from './pages/Knowledge'
 import Profile from './pages/Profile'
 import useUserStore from './stores/userStore'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useUserStore()
+  const { isAuthenticated, _hasHydrated } = useUserStore()
+
+  // Wait for hydration to complete before checking auth
+  if (!_hasHydrated) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -23,7 +33,16 @@ const ProtectedRoute = ({ children }) => {
 
 // Enterprise only route wrapper
 const EnterpriseRoute = ({ children }) => {
-  const { isAuthenticated, user } = useUserStore()
+  const { isAuthenticated, user, _hasHydrated } = useUserStore()
+
+  // Wait for hydration to complete before checking auth
+  if (!_hasHydrated) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -96,6 +115,30 @@ function App() {
           element={
             <EnterpriseRoute>
               <ResourceForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="knowledge"
+          element={
+            <EnterpriseRoute>
+              <Knowledge />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="knowledge/create"
+          element={
+            <EnterpriseRoute>
+              <KnowledgeForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="knowledge/edit/:id"
+          element={
+            <EnterpriseRoute>
+              <KnowledgeForm />
             </EnterpriseRoute>
           }
         />

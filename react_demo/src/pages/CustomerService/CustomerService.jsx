@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { customerServiceAPI } from '../../services/api'
 import { formatTime } from '../../utils/helpers'
+import useUserStore from '../../stores/userStore'
 
 // Markdown components styling
 const markdownComponents = {
@@ -101,6 +102,7 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }) => {
 }
 
 const CustomerService = () => {
+  const { user, isAuthenticated, token } = useUserStore()
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
@@ -108,7 +110,19 @@ const CustomerService = () => {
   const [contextStatus, setContextStatus] = useState(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [clearing, setClearing] = useState(false)
+  const [userSlots, setUserSlots] = useState(null)
+  const [showProfile, setShowProfile] = useState(false)
   const messagesEndRef = useRef(null)
+
+  // 调试信息
+  useEffect(() => {
+    console.log('[CustomerService] 用户状态:', {
+      isAuthenticated,
+      userId: user?.id,
+      userName: user?.name,
+      hasToken: !!token
+    })
+  }, [isAuthenticated, user, token])
 
   const quickQuestions = [
     '如何注册账号？',
@@ -128,7 +142,8 @@ const CustomerService = () => {
   useEffect(() => {
     initChat()
     loadContextStatus()
-  }, [])
+    loadUserSlots()
+  }, [isAuthenticated])
 
   useEffect(() => {
     scrollToBottom()
@@ -141,6 +156,16 @@ const CustomerService = () => {
     } catch (error) {
       // 如果未登录或出错，忽略上下文状态
       console.log('Context status not available')
+    }
+  }
+
+  const loadUserSlots = async () => {
+    if (!isAuthenticated) return
+    try {
+      const response = await customerServiceAPI.getSlots()
+      setUserSlots(response.data)
+    } catch (error) {
+      console.log('Slots not available')
     }
   }
 
@@ -166,6 +191,8 @@ const CustomerService = () => {
       await customerServiceAPI.clearHistory()
       setMessages([welcomeMessage])
       setContextStatus(null)
+      setUserSlots(null)
+      setShowProfile(false)
       setShowClearConfirm(false)
     } catch (error) {
       console.error('Failed to clear history:', error)
@@ -199,8 +226,9 @@ const CustomerService = () => {
       }
       setMessages(prev => [...prev, aiMessage])
 
-      // 更新上下文状态
+      // 更新上下文状态和槽位信息
       loadContextStatus()
+      loadUserSlots()
     } catch (error) {
       console.error('Failed to send message:', error)
       // Mock AI response for development
@@ -254,8 +282,15 @@ const CustomerService = () => {
 
             {/* 操作按钮 */}
             <div className="flex items-center gap-2">
+              {/* 登录状态指示器 */}
+              <div className="hidden sm:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
+                <div className={`w-2 h-2 rounded-full ${isAuthenticated ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                <span className="text-white/90 text-xs">
+                  {isAuthenticated ? `已登录: ${user?.name}` : '未登录（无上下文记忆）'}
+                </span>
+              </div>
               {/* 上下文状态指示器 */}
-              {contextStatus && (
+              {contextStatus && isAuthenticated && (
                 <div className="hidden sm:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-white/90 text-xs">
@@ -279,6 +314,59 @@ const CustomerService = () => {
             </div>
           </div>
         </div>
+
+        {/* User Profile Panel - 用户画像面板 */}
+        {isAuthenticated && userSlots && Object.keys(userSlots.profile || {}).length > 0 && (
+          <div className="border-b border-gray-200 bg-purple-50">
+            <button
+              onClick={() => setShowProfile(!showProfile)}
+              className="w-full px-6 py-2 flex items-center justify-between text-sm text-purple-700 hover:bg-purple-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="font-medium">您的画像</span>
+                <span className="text-purple-500">（已收集 {userSlots.fill_rate}%）</span>
+              </div>
+              <svg
+                className={`w-4 h-4 transition-transform ${showProfile ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showProfile && (
+              <div className="px-6 py-3 bg-white border-t border-purple-100">
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(userSlots.profile).map(([key, value]) => (
+                    <div
+                      key={key}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-full text-sm"
+                    >
+                      <span className="font-medium">{key}:</span>
+                      <span>{value}</span>
+                    </div>
+                  ))}
+                </div>
+                {userSlots.stage && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    对话阶段: {
+                      userSlots.stage === 'greeting' ? '初次问候' :
+                      userSlots.stage === 'collecting_basic' ? '收集基本信息' :
+                      userSlots.stage === 'collecting_detail' ? '收集详细需求' :
+                      userSlots.stage === 'recommendation' ? '可以推荐' :
+                      userSlots.stage === 'qa' ? '问答咨询' : userSlots.stage
+                    }
+                    {userSlots.turn_count > 0 && ` | 第 ${userSlots.turn_count} 轮对话`}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Messages Area */}
         <div className="h-96 overflow-y-auto p-6 bg-gray-50">

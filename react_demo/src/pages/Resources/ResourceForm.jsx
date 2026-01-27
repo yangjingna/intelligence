@@ -47,9 +47,10 @@ const ResourceForm = () => {
         requirements: resource.requirements || '',
         tags: resource.tags?.join(', ') || '',
         deadline: resource.deadline?.split('T')[0] || '',
-        contactName: resource.contactName || '',
-        contactEmail: resource.contactEmail || '',
-        contactPhone: resource.contactPhone || ''
+        // 兼容后端返回的 snake_case 字段名
+        contactName: resource.contact_name || resource.contactName || '',
+        contactEmail: resource.contact_email || resource.contactEmail || '',
+        contactPhone: resource.contact_phone || resource.contactPhone || ''
       })
     } catch (error) {
       console.error('Failed to fetch resource:', error)
@@ -79,10 +80,17 @@ const ResourceForm = () => {
 
     setLoading(true)
     try {
+      // 转换为后端期望的 snake_case 字段名
       const submitData = {
-        ...formData,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        deadline: formData.deadline || null
+        title: formData.title,
+        type: formData.type,
+        description: formData.description,
+        requirements: formData.requirements || null,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+        deadline: formData.deadline || null,
+        contact_name: formData.contactName || null,
+        contact_email: formData.contactEmail || null,
+        contact_phone: formData.contactPhone || null
       }
 
       if (isEdit) {
@@ -93,6 +101,7 @@ const ResourceForm = () => {
       navigate('/resources')
     } catch (error) {
       console.error('Failed to save resource:', error)
+      alert('保存失败，请重试')
     } finally {
       setLoading(false)
     }
