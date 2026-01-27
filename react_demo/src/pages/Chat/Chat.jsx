@@ -51,7 +51,11 @@ const ConversationItem = ({ conversation, isActive, onClick, onlineUsers }) => {
   const jobTitle = conversation.jobTitle || conversation.job_title
   const resourceTitle = conversation.resourceTitle || conversation.resource_title
 
-  const isOnline = onlineUsers.has(targetUserId)
+  // 确保类型一致（都是数字）
+  const normalizedTargetUserId = Number(targetUserId)
+  const isOnline = Array.from(onlineUsers).some(id => Number(id) === normalizedTargetUserId)
+
+  console.log('[ConversationItem] targetUserId:', targetUserId, 'type:', typeof targetUserId, 'onlineUsers:', Array.from(onlineUsers), 'isOnline:', isOnline)
 
   return (
     <button
@@ -170,6 +174,7 @@ const Chat = () => {
 
   const setupWebSocket = () => {
     if (token) {
+      console.log('[Chat] 设置WebSocket监听器')
       wsService.connect(token)
       wsService.on('new_message', handleNewMessage)
       wsService.on('online_status', handleOnlineStatus)
@@ -177,8 +182,16 @@ const Chat = () => {
   }
 
   const handleNewMessage = (message) => {
-    if (message.conversationId === currentConversation?.id) {
-      addMessage(message)
+    console.log('[Chat] handleNewMessage 收到:', message)
+    const normalizedMessage = normalizeMessage(message)
+
+    // 获取当前状态中的 currentConversation（避免闭包问题）
+    const currentConvId = useChatStore.getState().currentConversation?.id
+    console.log('[Chat] 当前会话ID:', currentConvId, '消息会话ID:', normalizedMessage.conversationId)
+
+    if (normalizedMessage.conversationId === currentConvId) {
+      console.log('[Chat] 添加消息到当前会话')
+      addMessage(normalizedMessage)
     }
     // Update conversation list
     fetchConversations()
@@ -194,27 +207,7 @@ const Chat = () => {
       setConversations(response.data || [])
     } catch (error) {
       console.error('Failed to fetch conversations:', error)
-      // Mock data
-      setConversations([
-        {
-          id: 1,
-          targetUserId: 101,
-          targetUserName: '张经理',
-          lastMessage: '您好，请问您对这个岗位感兴趣吗？',
-          lastMessageTime: new Date().toISOString(),
-          jobTitle: '前端开发工程师',
-          unreadCount: 2
-        },
-        {
-          id: 2,
-          targetUserId: 102,
-          targetUserName: '李经理',
-          lastMessage: '感谢您的关注',
-          lastMessageTime: new Date().toISOString(),
-          jobTitle: '后端开发工程师',
-          unreadCount: 0
-        }
-      ])
+      setConversations([])
     } finally {
       setLoading(false)
     }
@@ -230,6 +223,16 @@ const Chat = () => {
     }
   }
 
+  const normalizeMessage = (msg) => ({
+    ...msg,
+    id: msg.id,
+    conversationId: msg.conversationId || msg.conversation_id,
+    senderId: msg.senderId || msg.sender_id,
+    content: msg.content,
+    type: msg.type,
+    createdAt: msg.createdAt || msg.created_at
+  })
+
   const fetchMessages = async (conversationId, isLoadMore = false) => {
     try {
       const offset = isLoadMore ? messageOffset : 0
@@ -238,7 +241,8 @@ const Chat = () => {
         limit: MESSAGE_LIMIT
       })
 
-      const newMessages = response.data || []
+      const rawMessages = response.data || []
+      const newMessages = rawMessages.map(normalizeMessage)
 
       if (isLoadMore) {
         // 加载更多时，将新消息添加到前面
@@ -252,31 +256,8 @@ const Chat = () => {
       setMessageOffset(offset + newMessages.length)
     } catch (error) {
       console.error('Failed to fetch messages:', error)
-      // Mock messages
       if (!isLoadMore) {
-        setMessages([
-          {
-            id: 1,
-            content: '您好，我对贵公司的岗位很感兴趣',
-            senderId: user?.id,
-            type: MESSAGE_TYPES.TEXT,
-            createdAt: new Date(Date.now() - 3600000).toISOString()
-          },
-          {
-            id: 2,
-            content: '感谢您的关注！请问您有相关工作经验吗？',
-            senderId: 101,
-            type: MESSAGE_TYPES.TEXT,
-            createdAt: new Date(Date.now() - 3000000).toISOString()
-          },
-          {
-            id: 3,
-            content: '您好，HR 当前离线。根据您的问题，我来为您解答：这个岗位主要负责前端产品开发，需要熟悉 React 或 Vue 框架。如需更多信息，HR 上线后会尽快回复您。',
-            senderId: 101,
-            type: MESSAGE_TYPES.AI_RESPONSE,
-            createdAt: new Date(Date.now() - 1800000).toISOString()
-          }
-        ])
+        setMessages([])
         setHasMore(false)
       }
     }
@@ -357,8 +338,9 @@ const Chat = () => {
   const currentJobTitle = currentConversation?.jobTitle || currentConversation?.job_title
   const currentResourceTitle = currentConversation?.resourceTitle || currentConversation?.resource_title
 
+  // 确保类型一致比较在线状态
   const isOnline = currentConversation
-    ? onlineUsers.has(currentTargetUserId)
+    ? Array.from(onlineUsers).some(id => Number(id) === Number(currentTargetUserId))
     : false
 
   return (

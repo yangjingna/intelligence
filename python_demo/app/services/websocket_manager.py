@@ -34,13 +34,31 @@ class WebSocketManager:
             except Exception:
                 pass
 
+    async def send_online_users_list(self, websocket: WebSocket):
+        """发送当前所有在线用户列表给新连接的用户"""
+        message = {
+            "type": "online_users_list",
+            "payload": {
+                "userIds": list(self.online_users)
+            }
+        }
+        try:
+            await websocket.send_text(json.dumps(message))
+            print(f"[WS] 发送在线用户列表: {list(self.online_users)}")
+        except Exception as e:
+            print(f"[WS] 发送在线用户列表失败: {e}")
+
     async def send_message(self, user_id: int, message: dict):
+        print(f"[WS] 尝试发送消息给用户 {user_id}, 当前在线用户: {list(self.active_connections.keys())}")
         if user_id in self.active_connections:
             try:
                 await self.active_connections[user_id].send_text(json.dumps(message))
+                print(f"[WS] 消息发送成功给用户 {user_id}")
                 return True
-            except Exception:
+            except Exception as e:
+                print(f"[WS] 消息发送失败: {e}")
                 return False
+        print(f"[WS] 用户 {user_id} 不在线，无法发送消息")
         return False
 
     def is_user_online(self, user_id: int) -> bool:

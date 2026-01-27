@@ -70,14 +70,26 @@ async def websocket_endpoint(
         await websocket.close(code=4001, reason="Invalid token")
         return
 
-    user_id = payload.get("sub")
-    if not user_id:
+    user_id_str = payload.get("sub")
+    if not user_id_str:
         await websocket.close(code=4001, reason="Invalid token payload")
         return
 
+    # sub 是字符串，需要转换为整数
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
+        await websocket.close(code=4001, reason="Invalid user id")
+        return
+
     # Register connection with manager
+    print(f"[WS] 用户 {user_id} WebSocket连接成功")
     ws_manager.active_connections[user_id] = websocket
     ws_manager.online_users.add(user_id)
+
+    # 先发送当前在线用户列表给新连接的用户
+    await ws_manager.send_online_users_list(websocket)
+    # 再广播新用户上线状态
     await ws_manager.broadcast_status(user_id, True)
 
     try:

@@ -23,6 +23,7 @@ class WebSocketService {
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
+        console.log('[WS] 收到消息:', data.type, data.payload)
         this.emit(data.type, data.payload)
       } catch (error) {
         console.error('WebSocket message parse error:', error)

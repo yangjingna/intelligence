@@ -31,13 +31,7 @@ const Header = () => {
                 to="/jobs"
                 className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
               >
-                岗位招聘
-              </Link>
-              <Link
-                to="/resources"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                {user?.role === 'enterprise' ? '资源发布' : '资源匹配'}
+                {user?.role === 'enterprise' ? '岗位发布' : '岗位匹配'}
               </Link>
               <Link
                 to="/customer-service"
