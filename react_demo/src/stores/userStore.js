@@ -45,16 +45,18 @@ const useUserStore = create(
         if (error) {
           console.error('[UserStore] Hydration error:', error)
         }
-        // Always set hydrated to true after rehydration attempt
-        useUserStore.setState({ _hasHydrated: true })
       }
     }
   )
 )
 
-// Also set hydrated immediately if storage is empty or on initial load
+// Set hydrated flag after store is created
+useUserStore.persist.onFinishHydration(() => {
+  useUserStore.setState({ _hasHydrated: true })
+})
+
+// Fallback: set hydrated after a short delay if onFinishHydration doesn't fire
 if (typeof window !== 'undefined') {
-  // Ensure hydration flag is set after a short delay as fallback
   setTimeout(() => {
     if (!useUserStore.getState()._hasHydrated) {
       useUserStore.setState({ _hasHydrated: true })

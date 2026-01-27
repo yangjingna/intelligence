@@ -81,17 +81,24 @@ const ResourceForm = () => {
     setLoading(true)
     try {
       // 转换为后端期望的 snake_case 字段名
+      // 注意：空字符串需要转为 undefined 而不是 null，否则后端验证会失败
       const submitData = {
         title: formData.title,
         type: formData.type,
-        description: formData.description,
+        description: formData.description || null,
         requirements: formData.requirements || null,
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
         deadline: formData.deadline || null,
         contact_name: formData.contactName || null,
-        contact_email: formData.contactEmail || null,
         contact_phone: formData.contactPhone || null
       }
+
+      // 只有当邮箱不为空时才添加，避免空字符串导致验证失败
+      if (formData.contactEmail && formData.contactEmail.trim()) {
+        submitData.contact_email = formData.contactEmail.trim()
+      }
+
+      console.log('Submitting data:', submitData)
 
       if (isEdit) {
         await resourcesAPI.updateResource(id, submitData)
@@ -101,7 +108,9 @@ const ResourceForm = () => {
       navigate('/resources')
     } catch (error) {
       console.error('Failed to save resource:', error)
-      alert('保存失败，请重试')
+      // 显示更详细的错误信息
+      const errorMsg = error.response?.data?.detail || '保存失败，请检查填写的信息'
+      alert(errorMsg)
     } finally {
       setLoading(false)
     }

@@ -36,8 +36,8 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    # Create token
-    token = create_access_token({"sub": user.id})
+    # Create token - sub 必须是字符串
+    token = create_access_token({"sub": str(user.id)})
 
     return AuthResponse(
         user=UserResponse.model_validate(user),
@@ -61,8 +61,8 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
             detail="账号已被禁用"
         )
 
-    # Create token
-    token = create_access_token({"sub": user.id})
+    # Create token - sub 必须是字符串
+    token = create_access_token({"sub": str(user.id)})
 
     return AuthResponse(
         user=UserResponse.model_validate(user),

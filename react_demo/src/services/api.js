@@ -14,28 +14,22 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const storage = localStorage.getItem('user-storage')
+    console.log('[API] Request to:', config.url)
     if (storage) {
       try {
         const parsed = JSON.parse(storage)
         const token = parsed?.state?.token
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
-          // Debug: 只在customer-service请求时打印
-          if (config.url?.includes('customer-service')) {
-            console.log('[API] Token已添加到请求头')
-          }
+          console.log('[API] Token添加成功, 前20字符:', token.substring(0, 20) + '...')
         } else {
-          if (config.url?.includes('customer-service')) {
-            console.log('[API] 警告: storage存在但token为空', parsed?.state)
-          }
+          console.log('[API] 警告: storage存在但token为空', parsed?.state)
         }
       } catch (e) {
         console.error('[API] 解析storage失败:', e)
       }
     } else {
-      if (config.url?.includes('customer-service')) {
-        console.log('[API] 警告: localStorage中没有user-storage')
-      }
+      console.log('[API] 警告: localStorage中没有user-storage')
     }
     return config
   },

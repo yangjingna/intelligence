@@ -78,8 +78,13 @@ async def create_resource(
     if current_user.role.value != "enterprise":
         raise HTTPException(status_code=403, detail="只有企业用户可以发布资源")
 
+    # 转换数据，处理枚举类型
+    data = resource_data.model_dump()
+    if data.get("type"):
+        data["type"] = ResourceType(data["type"])
+
     resource = Resource(
-        **resource_data.model_dump(),
+        **data,
         publisher_id=current_user.id,
         company=current_user.company
     )

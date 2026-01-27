@@ -49,7 +49,17 @@ const Login = () => {
     try {
       const response = await authAPI.login(formData)
       const { user, token } = response.data
+      console.log('[Login] 登录成功, token:', token?.substring(0, 30) + '...')
+      console.log('[Login] 用户角色:', user?.role)
+
       login(user, token)
+
+      // 验证 token 是否保存成功
+      setTimeout(() => {
+        const saved = localStorage.getItem('user-storage')
+        console.log('[Login] 保存后的storage:', saved ? JSON.parse(saved)?.state?.token?.substring(0, 30) + '...' : 'null')
+      }, 100)
+
       wsService.connect(token)
 
       if (user.role === 'enterprise') {
