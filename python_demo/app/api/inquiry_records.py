@@ -96,7 +96,7 @@ async def create_inquiry(
         **inquiry_data.model_dump(),
         inquirer_id=current_user.id,
         inquirer_name=current_user.name,
-        inquirer_role=current_user.role.value
+        inquirer_role=current_user.role
     )
 
     db.add(record)

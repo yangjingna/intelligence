@@ -59,7 +59,7 @@ async def get_my_barriers(
     db: Session = Depends(get_db)
 ):
     """获取我发布的技术壁垒"""
-    if current_user.role.value != "enterprise":
+    if current_user.role != "enterprise":
         raise HTTPException(status_code=403, detail="只有企业用户可以查看自己发布的壁垒")
 
     barriers = db.query(TechnicalBarrier).filter(
@@ -92,7 +92,7 @@ async def create_barrier(
     db: Session = Depends(get_db)
 ):
     """发布技术壁垒"""
-    if current_user.role.value != "enterprise":
+    if current_user.role != "enterprise":
         raise HTTPException(status_code=403, detail="只有企业用户可以发布技术壁垒")
 
     barrier = TechnicalBarrier(

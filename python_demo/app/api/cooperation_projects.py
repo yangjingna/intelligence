@@ -29,9 +29,9 @@ async def get_cooperation_projects(
     query = db.query(CooperationProject)
 
     # 根据用户角色过滤
-    if current_user.role.value == "enterprise":
+    if current_user.role == "enterprise":
         query = query.filter(CooperationProject.enterprise_id == current_user.id)
-    elif current_user.role.value == "university":
+    elif current_user.role == "university":
         query = query.filter(CooperationProject.university_id == current_user.id)
     else:
         # 政府用户可以查看所有项目
@@ -71,7 +71,7 @@ async def get_project(
         raise HTTPException(status_code=404, detail="合作项目不存在")
 
     # 权限检查
-    if current_user.role.value not in ["enterprise", "university", "government"]:
+    if current_user.role not in ["enterprise", "university", "government"]:
         raise HTTPException(status_code=403, detail="无权访问此项目")
 
     project_dict = CooperationProjectResponse.model_validate(project).model_dump()
@@ -85,7 +85,7 @@ async def create_project(
     db: Session = Depends(get_db)
 ):
     """创建合作项目"""
-    if current_user.role.value not in ["enterprise", "university"]:
+    if current_user.role not in ["enterprise", "university"]:
         raise HTTPException(status_code=403, detail="只有企业和高校用户可以创建合作项目")
 
     project = CooperationProject(
@@ -169,11 +169,11 @@ async def get_project_stats(
     """获取合作项目统计"""
     query = db.query(CooperationProject)
 
-    if current_user.role.value == "enterprise":
+    if current_user.role == "enterprise":
         query = query.filter(CooperationProject.enterprise_id == current_user.id)
-    elif current_user.role.value == "university":
+    elif current_user.role == "university":
         query = query.filter(CooperationProject.university_id == current_user.id)
-    elif current_user.role.value == "government":
+    elif current_user.role == "government":
         # 政府用户统计所有项目
         pass
     else:

@@ -64,7 +64,7 @@ async def get_my_achievements(
     db: Session = Depends(get_db)
 ):
     """获取我发布的研发成果"""
-    if current_user.role.value != "university":
+    if current_user.role != "university":
         raise HTTPException(status_code=403, detail="只有高校用户可以查看自己发布的成果")
 
     achievements = db.query(ResearchAchievement).filter(
@@ -99,7 +99,7 @@ async def create_achievement(
     db: Session = Depends(get_db)
 ):
     """创建研发成果"""
-    if current_user.role.value != "university":
+    if current_user.role != "university":
         raise HTTPException(status_code=403, detail="只有高校用户可以发布研发成果")
 
     achievement = ResearchAchievement(

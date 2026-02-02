@@ -59,7 +59,7 @@ async def get_my_demands(
     db: Session = Depends(get_db)
 ):
     """获取我发布的研发需求"""
-    if current_user.role.value != "enterprise":
+    if current_user.role != "enterprise":
         raise HTTPException(status_code=403, detail="只有企业用户可以查看自己发布的需求")
 
     demands = db.query(ResearchDemand).filter(
@@ -92,7 +92,7 @@ async def create_demand(
     db: Session = Depends(get_db)
 ):
     """发布研发需求"""
-    if current_user.role.value != "enterprise":
+    if current_user.role != "enterprise":
         raise HTTPException(status_code=403, detail="只有企业用户可以发布研发需求")
 
     demand = ResearchDemand(
