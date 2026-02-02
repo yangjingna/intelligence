@@ -5,7 +5,7 @@ import useUserStore from '../../stores/userStore'
 import { PROJECT_STATUS } from '../../utils/constants'
 
 const CooperationProjects = () => {
-  const { user, isAuthenticated, isEnterprise, isUniversity } = useUserStore()
+  const { user, isAuthenticated } = useUserStore()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')

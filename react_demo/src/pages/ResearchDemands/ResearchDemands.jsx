@@ -5,7 +5,7 @@ import useUserStore from '../../stores/userStore'
 import { DEMAND_STATUS, DEMAND_PRIORITY } from '../../utils/constants'
 
 const ResearchDemands = () => {
-  const { user, isAuthenticated, isEnterprise } = useUserStore()
+  const { user, isAuthenticated } = useUserStore()
   const [demands, setDemands] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -61,7 +61,7 @@ const ResearchDemands = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">研发需求</h1>
-        {isEnterprise && (
+        {user?.role === 'enterprise' && (
           <Link
             to="/research-demands/create"
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"

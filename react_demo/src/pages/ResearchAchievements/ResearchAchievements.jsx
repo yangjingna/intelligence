@@ -5,7 +5,7 @@ import useUserStore from '../../stores/userStore'
 import { ACHIEVEMENT_STATUS } from '../../utils/constants'
 
 const ResearchAchievements = () => {
-  const { user, isAuthenticated, isUniversity } = useUserStore()
+  const { user, isAuthenticated } = useUserStore()
   const [achievements, setAchievements] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -59,7 +59,7 @@ const ResearchAchievements = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">研发成果</h1>
-        {isUniversity && (
+        {user?.role === 'university' && (
           <Link
             to="/research-achievements/create"
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
