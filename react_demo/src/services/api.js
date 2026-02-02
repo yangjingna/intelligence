@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://47.108.117.7:8000/api'
+const API_BASE_URL = 'http://localhost:8000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -125,6 +125,69 @@ export const knowledgeAPI = {
   deleteKnowledge: (id) => api.delete(`/knowledge/${id}`),
   getStats: () => api.get('/knowledge/stats'),
   getCategories: () => api.get('/knowledge/categories')
+}
+
+// Research Demands API
+export const researchDemandsAPI = {
+  getDemands: (params) => api.get('/research-demands', { params }),
+  getDemand: (id) => api.get(`/research-demands/${id}`),
+  createDemand: (data) => api.post('/research-demands', data),
+  updateDemand: (id, data) => api.put(`/research-demands/${id}`, data),
+  deleteDemand: (id) => api.delete(`/research-demands/${id}`),
+  getMyDemands: () => api.get('/research-demands/my'),
+  getStats: () => api.get('/research-demands/stats/summary')
+}
+
+// Technical Barriers API
+export const technicalBarriersAPI = {
+  getBarriers: (params) => api.get('/technical-barriers', { params }),
+  getBarrier: (id) => api.get(`/technical-barriers/${id}`),
+  createBarrier: (data) => api.post('/technical-barriers', data),
+  updateBarrier: (id, data) => api.put(`/technical-barriers/${id}`, data),
+  deleteBarrier: (id) => api.delete(`/technical-barriers/${id}`),
+  getMyBarriers: () => api.get('/technical-barriers/my'),
+  getStats: () => api.get('/technical-barriers/stats/summary')
+}
+
+// Research Achievements API
+export const researchAchievementsAPI = {
+  getAchievements: (params) => api.get('/research-achievements', { params }),
+  getAchievement: (id) => api.get(`/research-achievements/${id}`),
+  createAchievement: (data) => api.post('/research-achievements', data),
+  updateAchievement: (id, data) => api.put(`/research-achievements/${id}`, data),
+  deleteAchievement: (id) => api.delete(`/research-achievements/${id}`),
+  getMyAchievements: () => api.get('/research-achievements/my'),
+  getStats: () => api.get('/research-achievements/stats/summary')
+}
+
+// Cooperation Projects API
+export const cooperationProjectsAPI = {
+  getProjects: (params) => api.get('/cooperation-projects', { params }),
+  getProject: (id) => api.get(`/cooperation-projects/${id}`),
+  createProject: (data) => api.post('/cooperation-projects', data),
+  updateProject: (id, data) => api.put(`/cooperation-projects/${id}`, data),
+  deleteProject: (id) => api.delete(`/cooperation-projects/${id}`),
+  getStats: () => api.get('/cooperation-projects/stats/summary')
+}
+
+// Inquiry Records API
+export const inquiryRecordsAPI = {
+  getInquiries: (params) => api.get('/inquiry-records', { params }),
+  getInquiry: (id) => api.get(`/inquiry-records/${id}`),
+  createInquiry: (data) => api.post('/inquiry-records', data),
+  updateInquiry: (id, data) => api.put(`/inquiry-records/${id}`, data),
+  deleteInquiry: (id) => api.delete(`/inquiry-records/${id}`),
+  getStats: () => api.get('/inquiry-records/stats/summary')
+}
+
+// Innovation Dynamics API
+export const innovationDynamicsAPI = {
+  getDynamics: (params) => api.get('/innovation-dynamics', { params }),
+  getDynamic: (id) => api.get(`/innovation-dynamics/${id}`),
+  createDynamic: (data) => api.post('/innovation-dynamics', data),
+  updateDynamic: (id, data) => api.put(`/innovation-dynamics/${id}`, data),
+  deleteDynamic: (id) => api.delete(`/innovation-dynamics/${id}`),
+  getStats: () => api.get('/innovation-dynamics/stats/summary')
 }
 
 // WebSocket helper

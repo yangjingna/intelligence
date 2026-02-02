@@ -4,12 +4,20 @@ import wsService from '../../services/websocket'
 
 const Header = () => {
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout } = useUserStore()
+  const { user, isAuthenticated, logout, isEnterprise, isUniversity, isGovernment, isStudent } = useUserStore()
 
   const handleLogout = () => {
     wsService.disconnect()
     logout()
     navigate('/login')
+  }
+
+  const getRoleLabel = () => {
+    if (isStudent()) return '学生'
+    if (isEnterprise()) return '企业'
+    if (isUniversity()) return '高校'
+    if (isGovernment()) return '政府'
+    return ''
   }
 
   return (
@@ -27,12 +35,59 @@ const Header = () => {
               >
                 首页
               </Link>
-              <Link
-                to="/jobs"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
-              >
-                {user?.role === 'enterprise' ? '资源发布' : '资源匹配'}
-              </Link>
+              {isEnterprise() && (
+                <Link
+                  to="/jobs"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  资源发布
+                </Link>
+              )}
+              {/* 研发需求 */}
+              {(isEnterprise() || isUniversity()) && (
+                <Link
+                  to="/research-demands"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  研发需求
+                </Link>
+              )}
+              {/* 技术壁垒 */}
+              {(isEnterprise() || isUniversity()) && (
+                <Link
+                  to="/technical-barriers"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  技术壁垒
+                </Link>
+              )}
+              {/* 研发成果 */}
+              {isUniversity() && (
+                <Link
+                  to="/research-achievements"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  研发成果
+                </Link>
+              )}
+              {/* 合作项目 */}
+              {isEnterprise() && (
+                <Link
+                  to="/cooperation-projects"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  合作项目
+                </Link>
+              )}
+              {/* 创新动态 */}
+              {isGovernment() && (
+                <Link
+                  to="/innovation-dynamics"
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  创新动态
+                </Link>
+              )}
               {isAuthenticated && (
                 <Link
                   to="/chat"
@@ -47,7 +102,7 @@ const Header = () => {
               >
                 智能客服
               </Link>
-              {user?.role === 'enterprise' && (
+              {isEnterprise() && (
                 <Link
                   to="/knowledge"
                   className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
@@ -61,12 +116,21 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/profile"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  {user?.name || '个人中心'}
-                </Link>
+                <div className="flex flex-col items-end">
+                  <Link
+                    to="/profile"
+                    className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors"
+                  >
+                    {user?.name || '个人中心'}
+                  </Link>
+                  <span className="text-xs text-gray-500">
+                    {getRoleLabel()}
+                    {isEnterprise() && user?.company && ` · ${user.company}`}
+                    {isUniversity() && user?.university && ` · ${user.university}`}
+                    {isGovernment() && user?.government && ` · ${user.government}`}
+                    {isStudent() && user?.school && ` · ${user.school}`}
+                  </span>
+                </div>
                 <button
                   onClick={handleLogout}
                   className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"

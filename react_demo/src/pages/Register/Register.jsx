@@ -21,7 +21,16 @@ const Register = () => {
     major: '',
     // Enterprise fields
     company: '',
-    position: ''
+    position: '',
+    // University fields
+    university: '',
+    college: '',
+    research_field: '',
+    title: '',
+    // Government fields
+    government: '',
+    region: '',
+    department: ''
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
@@ -72,12 +81,35 @@ const Register = () => {
       if (!formData.major) {
         newErrors.major = '请输入专业'
       }
-    } else {
+    } else if (role === USER_ROLES.ENTERPRISE) {
       if (!formData.company) {
         newErrors.company = '请输入公司名称'
       }
       if (!formData.position) {
         newErrors.position = '请输入职位'
+      }
+    } else if (role === USER_ROLES.UNIVERSITY) {
+      if (!formData.university) {
+        newErrors.university = '请输入高校名称'
+      }
+      if (!formData.college) {
+        newErrors.college = '请输入学院名称'
+      }
+      if (!formData.research_field) {
+        newErrors.research_field = '请输入研究领域'
+      }
+      if (!formData.title) {
+        newErrors.title = '请输入职称'
+      }
+    } else if (role === USER_ROLES.GOVERNMENT) {
+      if (!formData.government) {
+        newErrors.government = '请输入政府部门名称'
+      }
+      if (!formData.region) {
+        newErrors.region = '请输入区域'
+      }
+      if (!formData.department) {
+        newErrors.department = '请输入部门'
       }
     }
 
@@ -104,9 +136,18 @@ const Register = () => {
       if (role === USER_ROLES.STUDENT) {
         submitData.school = formData.school
         submitData.major = formData.major
-      } else {
+      } else if (role === USER_ROLES.ENTERPRISE) {
         submitData.company = formData.company
         submitData.position = formData.position
+      } else if (role === USER_ROLES.UNIVERSITY) {
+        submitData.university = formData.university
+        submitData.college = formData.college
+        submitData.research_field = formData.research_field
+        submitData.title = formData.title
+      } else if (role === USER_ROLES.GOVERNMENT) {
+        submitData.government = formData.government
+        submitData.region = formData.region
+        submitData.department = formData.department
       }
 
       const response = await authAPI.register(submitData)
@@ -137,11 +178,11 @@ const Register = () => {
         </div>
 
         {/* Role Selection */}
-        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+        <div className="grid grid-cols-4 rounded-lg border border-gray-300 overflow-hidden">
           <button
             type="button"
             onClick={() => setRole(USER_ROLES.STUDENT)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+            className={`py-2 text-xs font-medium transition-colors ${
               role === USER_ROLES.STUDENT
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
@@ -152,13 +193,35 @@ const Register = () => {
           <button
             type="button"
             onClick={() => setRole(USER_ROLES.ENTERPRISE)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+            className={`py-2 text-xs font-medium transition-colors ${
               role === USER_ROLES.ENTERPRISE
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
             企业用户
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole(USER_ROLES.UNIVERSITY)}
+            className={`py-2 text-xs font-medium transition-colors ${
+              role === USER_ROLES.UNIVERSITY
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            高校用户
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole(USER_ROLES.GOVERNMENT)}
+            className={`py-2 text-xs font-medium transition-colors ${
+              role === USER_ROLES.GOVERNMENT
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            政府用户
           </button>
         </div>
 
@@ -301,6 +364,137 @@ const Register = () => {
                     placeholder="请输入职位"
                   />
                   {errors.position && <p className="mt-1 text-sm text-red-600">{errors.position}</p>}
+                </div>
+              </>
+            )}
+
+            {/* University Fields */}
+            {role === USER_ROLES.UNIVERSITY && (
+              <>
+                <div>
+                  <label htmlFor="university" className="block text-sm font-medium text-gray-700 mb-1">
+                    高校名称
+                  </label>
+                  <input
+                    id="university"
+                    name="university"
+                    type="text"
+                    value={formData.university}
+                    onChange={handleChange}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      errors.university ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="请输入高校名称"
+                  />
+                  {errors.university && <p className="mt-1 text-sm text-red-600">{errors.university}</p>}
+                </div>
+                <div>
+                  <label htmlFor="college" className="block text-sm font-medium text-gray-700 mb-1">
+                    学院名称
+                  </label>
+                  <input
+                    id="college"
+                    name="college"
+                    type="text"
+                    value={formData.college}
+                    onChange={handleChange}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      errors.college ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="请输入学院名称"
+                  />
+                  {errors.college && <p className="mt-1 text-sm text-red-600">{errors.college}</p>}
+                </div>
+                <div>
+                  <label htmlFor="research_field" className="block text-sm font-medium text-gray-700 mb-1">
+                    研究领域
+                  </label>
+                  <input
+                    id="research_field"
+                    name="research_field"
+                    type="text"
+                    value={formData.research_field}
+                    onChange={handleChange}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      errors.research_field ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="请输入研究领域"
+                  />
+                  {errors.research_field && <p className="mt-1 text-sm text-red-600">{errors.research_field}</p>}
+                </div>
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                    职称
+                  </label>
+                  <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    value={formData.title}
+                    onChange={handleChange}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      errors.title ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="请输入职称"
+                  />
+                  {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+                </div>
+              </>
+            )}
+
+            {/* Government Fields */}
+            {role === USER_ROLES.GOVERNMENT && (
+              <>
+                <div>
+                  <label htmlFor="government" className="block text-sm font-medium text-gray-700 mb-1">
+                    政府部门名称
+                  </label>
+                  <input
+                    id="government"
+                    name="government"
+                    type="text"
+                    value={formData.government}
+                    onChange={handleChange}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      errors.government ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="请输入政府部门名称"
+                  />
+                  {errors.government && <p className="mt-1 text-sm text-red-600">{errors.government}</p>}
+                </div>
+                <div>
+                  <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">
+                    区域
+                  </label>
+                  <input
+                    id="region"
+                    name="region"
+                    type="text"
+                    value={formData.region}
+                    onChange={handleChange}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      errors.region ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="请输入区域"
+                  />
+                  {errors.region && <p className="mt-1 text-sm text-red-600">{errors.region}</p>}
+                </div>
+                <div>
+                  <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+                    部门
+                  </label>
+                  <input
+                    id="department"
+                    name="department"
+                    type="text"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${
+                      errors.department ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="请输入部门"
+                  />
+                  {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
                 </div>
               </>
             )}

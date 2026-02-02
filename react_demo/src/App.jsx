@@ -9,6 +9,12 @@ import Chat from './pages/Chat'
 import CustomerService from './pages/CustomerService'
 import Knowledge, { KnowledgeForm } from './pages/Knowledge'
 import Profile from './pages/Profile'
+import { ResearchDemands, ResearchDemandForm, ResearchDemandDetail } from './pages/ResearchDemands'
+import { TechnicalBarriers, TechnicalBarrierForm, TechnicalBarrierDetail } from './pages/TechnicalBarriers'
+import { ResearchAchievements, ResearchAchievementForm, ResearchAchievementDetail } from './pages/ResearchAchievements'
+import { CooperationProjects, CooperationProjectForm, CooperationProjectDetail } from './pages/CooperationProjects'
+import { Inquiries, InquiryDetail } from './pages/Inquiries'
+import { InnovationDynamics } from './pages/InnovationDynamics'
 import useUserStore from './stores/userStore'
 import useChatStore from './stores/chatStore'
 import wsService from './services/websocket'
@@ -55,7 +61,8 @@ const GlobalMessageHandler = () => {
         id: Date.now(),
         senderName,
         content,
-        conversationId: message.conversationId || message.conversation_id
+        conversationId: message.conversationId || message.conversation_id,
+        type: 'new_message'
       })
 
       // 5秒后自动隐藏
@@ -77,20 +84,118 @@ const GlobalMessageHandler = () => {
       })
     }
 
+    const handleDemandPublished = (payload) => {
+      console.log('[Global] 收到新研发需求:', payload)
+      setNotification({
+        id: Date.now(),
+        title: '新研发需求',
+        content: `企业 ${payload.enterprise_name} 发布了新需求: ${payload.title}`,
+        type: 'demand_published',
+        link: '/research-demands'
+      })
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    }
+
+    const handleBarrierPublished = (payload) => {
+      console.log('[Global] 收到新技术壁垒:', payload)
+      setNotification({
+        id: Date.now(),
+        title: '新技术壁垒',
+        content: `企业 ${payload.enterprise_name} 发布了新壁垒: ${payload.title}`,
+        type: 'barrier_published',
+        link: '/technical-barriers'
+      })
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    }
+
+    const handleAchievementPublished = (payload) => {
+      console.log('[Global] 收到新研发成果:', payload)
+      setNotification({
+        id: Date.now(),
+        title: '新研发成果',
+        content: `高校 ${payload.university_name} 发布了新成果: ${payload.title}`,
+        type: 'achievement_published',
+        link: '/research-achievements'
+      })
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    }
+
+    const handleNewInquiry = (payload) => {
+      console.log('[Global] 收到新咨询:', payload)
+      setNotification({
+        id: Date.now(),
+        title: '新咨询',
+        content: `${payload.inquirer_name} (${payload.inquirer_role}) 咨询了您`,
+        type: 'new_inquiry',
+        link: '/inquiry-records'
+      })
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    }
+
+    const handleProjectSigned = (payload) => {
+      console.log('[Global] 项目签约:', payload)
+      setNotification({
+        id: Date.now(),
+        title: '项目签约',
+        content: `项目 ${payload.title} 已签约`,
+        type: 'project_signed',
+        link: '/cooperation-projects'
+      })
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    }
+
+    const handleProjectCompleted = (payload) => {
+      console.log('[Global] 项目完成:', payload)
+      setNotification({
+        id: Date.now(),
+        title: '项目完成',
+        content: `项目 ${payload.title} 已完成`,
+        type: 'project_completed',
+        link: '/cooperation-projects'
+      })
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    }
+
     wsService.on('new_message', handleNewMessage)
     wsService.on('online_status', handleOnlineStatus)
     wsService.on('online_users_list', handleOnlineUsersList)
+    wsService.on('demand_published', handleDemandPublished)
+    wsService.on('barrier_published', handleBarrierPublished)
+    wsService.on('achievement_published', handleAchievementPublished)
+    wsService.on('new_inquiry', handleNewInquiry)
+    wsService.on('project_signed', handleProjectSigned)
+    wsService.on('project_completed', handleProjectCompleted)
 
     return () => {
       wsService.off('new_message', handleNewMessage)
       wsService.off('online_status', handleOnlineStatus)
       wsService.off('online_users_list', handleOnlineUsersList)
+      wsService.off('demand_published', handleDemandPublished)
+      wsService.off('barrier_published', handleBarrierPublished)
+      wsService.off('achievement_published', handleAchievementPublished)
+      wsService.off('new_inquiry', handleNewInquiry)
+      wsService.off('project_signed', handleProjectSigned)
+      wsService.off('project_completed', handleProjectCompleted)
     }
   }, [isAuthenticated, token])
 
   const handleNotificationClick = () => {
     if (notification?.conversationId) {
       navigate('/chat')
+    } else if (notification?.link) {
+      navigate(notification.link)
     }
     setNotification(null)
   }
@@ -105,11 +210,11 @@ const GlobalMessageHandler = () => {
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
           <span className="text-blue-600 font-medium">
-            {notification.senderName?.charAt(0) || 'U'}
+            {notification.title?.charAt(0) || 'N'}
           </span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-gray-900">{notification.senderName}</p>
+          <p className="font-medium text-gray-900">{notification.title}</p>
           <p className="text-sm text-gray-500 truncate">{notification.content}</p>
           <p className="text-xs text-blue-500 mt-1">点击查看</p>
         </div>
@@ -145,6 +250,52 @@ const EnterpriseRoute = ({ children }) => {
   }
 
   if (user?.role !== 'enterprise') {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
+// University only route wrapper
+const UniversityRoute = ({ children }) => {
+  const { isAuthenticated, user, _hasHydrated } = useUserStore()
+
+  if (!_hasHydrated) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (user?.role !== 'university') {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
+// Government only route wrapper
+const GovernmentRoute = ({ children }) => {
+  const { isAuthenticated, user, _hasHydrated } = useUserStore()
+
+  if (!_hasHydrated) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (user?.role !== 'government') {
     return <Navigate to="/" replace />
   }
 
@@ -221,6 +372,170 @@ function App() {
             <EnterpriseRoute>
               <KnowledgeForm />
             </EnterpriseRoute>
+          }
+        />
+
+        {/* Research Demands routes */}
+        <Route
+          path="research-demands"
+          element={
+            <ProtectedRoute>
+              <ResearchDemands />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="research-demands/create"
+          element={
+            <EnterpriseRoute>
+              <ResearchDemandForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="research-demands/edit/:id"
+          element={
+            <EnterpriseRoute>
+              <ResearchDemandForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="research-demands/:id"
+          element={
+            <ProtectedRoute>
+              <ResearchDemandDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Technical Barriers routes */}
+        <Route
+          path="technical-barriers"
+          element={
+            <ProtectedRoute>
+              <TechnicalBarriers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="technical-barriers/create"
+          element={
+            <EnterpriseRoute>
+              <TechnicalBarrierForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="technical-barriers/edit/:id"
+          element={
+            <EnterpriseRoute>
+              <TechnicalBarrierForm />
+            </EnterpriseRoute>
+          }
+        />
+        <Route
+          path="technical-barriers/:id"
+          element={
+            <ProtectedRoute>
+              <TechnicalBarrierDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Research Achievements routes */}
+        <Route
+          path="research-achievements"
+          element={
+            <ProtectedRoute>
+              <ResearchAchievements />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="research-achievements/create"
+          element={
+            <UniversityRoute>
+              <ResearchAchievementForm />
+            </UniversityRoute>
+          }
+        />
+        <Route
+          path="research-achievements/edit/:id"
+          element={
+            <UniversityRoute>
+              <ResearchAchievementForm />
+            </UniversityRoute>
+          }
+        />
+        <Route
+          path="research-achievements/:id"
+          element={
+            <ProtectedRoute>
+              <ResearchAchievementDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Cooperation Projects routes */}
+        <Route
+          path="cooperation-projects"
+          element={
+            <ProtectedRoute>
+              <CooperationProjects />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="cooperation-projects/create"
+          element={
+            <ProtectedRoute>
+              <CooperationProjectForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="cooperation-projects/edit/:id"
+          element={
+            <ProtectedRoute>
+              <CooperationProjectForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="cooperation-projects/:id"
+          element={
+            <ProtectedRoute>
+              <CooperationProjectDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Inquiry Records routes */}
+        <Route
+          path="inquiry-records"
+          element={
+            <ProtectedRoute>
+              <Inquiries />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="inquiry-records/:id"
+          element={
+            <ProtectedRoute>
+              <InquiryDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Innovation Dynamics routes */}
+        <Route
+          path="innovation-dynamics"
+          element={
+            <GovernmentRoute>
+              <InnovationDynamics />
+            </GovernmentRoute>
           }
         />
 

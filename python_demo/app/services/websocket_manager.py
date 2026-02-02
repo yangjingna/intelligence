@@ -8,6 +8,97 @@ class WebSocketManager:
         self.active_connections: Dict[int, WebSocket] = {}
         self.online_users: Set[int] = set()
 
+    async def broadcast(self, message: dict):
+        """向所有在线用户广播消息"""
+        for uid, connection in self.active_connections.items():
+            try:
+                await connection.send_text(json.dumps(message))
+            except Exception:
+                pass
+
+    async def broadcast_demand_published(self, demand):
+        """广播新研发需求发布"""
+        message = {
+            "type": "demand_published",
+            "payload": {
+                "demand_id": demand.id,
+                "title": demand.title,
+                "enterprise_name": demand.enterprise_name,
+                "research_area": demand.research_area,
+                "priority": demand.priority.value if demand.priority else None,
+                "created_at": demand.created_at.isoformat() if demand.created_at else None
+            }
+        }
+        await self.broadcast(message)
+
+    async def broadcast_barrier_published(self, barrier):
+        """广播新技术壁垒发布"""
+        message = {
+            "type": "barrier_published",
+            "payload": {
+                "barrier_id": barrier.id,
+                "title": barrier.title,
+                "enterprise_name": barrier.enterprise_name,
+                "technical_area": barrier.technical_area,
+                "difficulty": barrier.difficulty.value if barrier.difficulty else None,
+                "created_at": barrier.created_at.isoformat() if barrier.created_at else None
+            }
+        }
+        await self.broadcast(message)
+
+    async def broadcast_achievement_published(self, achievement):
+        """广播新研发成果发布"""
+        message = {
+            "type": "achievement_published",
+            "payload": {
+                "achievement_id": achievement.id,
+                "title": achievement.title,
+                "university_name": achievement.university_name,
+                "research_area": achievement.research_area,
+                "created_at": achievement.created_at.isoformat() if achievement.created_at else None
+            }
+        }
+        await self.broadcast(message)
+
+    async def broadcast_project_signed(self, project):
+        """广播项目签约通知"""
+        message = {
+            "type": "project_signed",
+            "payload": {
+                "project_id": project.id,
+                "title": project.title,
+                "created_at": project.created_at.isoformat() if project.created_at else None
+            }
+        }
+        await self.broadcast(message)
+
+    async def broadcast_project_completed(self, project):
+        """广播项目完成通知"""
+        message = {
+            "type": "project_completed",
+            "payload": {
+                "project_id": project.id,
+                "title": project.title,
+                "created_at": project.created_at.isoformat() if project.created_at else None
+            }
+        }
+        await self.broadcast(message)
+
+    async def send_inquiry_notification(self, inquiry):
+        """发送新咨询通知给目标用户"""
+        message = {
+            "type": "new_inquiry",
+            "payload": {
+                "inquiry_id": inquiry.id,
+                "subject": inquiry.subject,
+                "inquirer_name": inquiry.inquirer_name,
+                "inquiry_role": inquiry.inquirer_role,
+                "created_at": inquiry.created_at.isoformat() if inquiry.created_at else None
+            }
+        }
+        # 发送给目标用户
+        await self.send_message(inquiry.target_user_id, message)
+
     async def connect(self, websocket: WebSocket, user_id: int):
         await websocket.accept()
         self.active_connections[user_id] = websocket

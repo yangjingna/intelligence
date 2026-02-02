@@ -31,7 +31,11 @@ const useUserStore = create(
 
       isStudent: () => get().user?.role === 'student',
 
-      isEnterprise: () => get().user?.role === 'enterprise'
+      isEnterprise: () => get().user?.role === 'enterprise',
+
+      isUniversity: () => get().user?.role === 'university',
+
+      isGovernment: () => get().user?.role === 'government'
     }),
     {
       name: 'user-storage',

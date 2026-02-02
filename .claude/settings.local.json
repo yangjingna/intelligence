@@ -24,7 +24,8 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(dir:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(del:*)"
     ]
   }
 }

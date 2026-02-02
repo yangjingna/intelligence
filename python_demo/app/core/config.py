@@ -4,7 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "mysql+pymysql://root:password@localhost:3306/intelligence_db"
+    DATABASE_URL: str = "mysql+pymysql://root:123456@localhost:3306/intelligence_db"
 
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
