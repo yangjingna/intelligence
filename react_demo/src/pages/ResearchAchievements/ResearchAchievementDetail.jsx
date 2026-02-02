@@ -7,7 +7,7 @@ import { PROJECT_STATUS } from '../../utils/constants'
 const CooperationProjectDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user, isAuthenticated, isEnterprise, isUniversity } = useUserStore()
+  const { user, isAuthenticated } = useUserStore()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showUpdateStatus, setShowUpdateStatus] = useState(false)
