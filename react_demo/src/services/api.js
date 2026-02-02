@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8000/api'
+const API_BASE_URL = 'http://47.108.117.7:8000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -129,7 +129,7 @@ export const knowledgeAPI = {
 
 // WebSocket helper
 export const createWebSocket = (token) => {
-  const wsUrl = `ws://localhost:8000/ws?token=${token}`
+  const wsUrl = `ws://47.108.117.7:8000/ws?token=${token}`
   return new WebSocket(wsUrl)
 }
 
