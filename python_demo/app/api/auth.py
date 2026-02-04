@@ -86,8 +86,8 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
 
     return AuthResponse(
         user=UserResponse.model_validate(user),
-            token=token
-        )
+        token=token
+    )
 
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):

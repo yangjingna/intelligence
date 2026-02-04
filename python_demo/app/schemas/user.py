@@ -53,17 +53,29 @@ class UserResponse(BaseModel):
     name: str
     phone: Optional[str] = None
     role: str
+    # Student fields
     school: Optional[str] = None
     major: Optional[str] = None
     graduation_year: Optional[str] = None
     bio: Optional[str] = None
+    # Enterprise fields
     company: Optional[str] = None
     position: Optional[str] = None
     department: Optional[str] = None
     company_description: Optional[str] = None
+    # University fields
+    university: Optional[str] = None
+    college: Optional[str] = None
+    research_field: Optional[str] = None
+    title: Optional[str] = None
+    # Government fields
+    government: Optional[str] = None
+    region: Optional[str] = None
     is_online: bool = False
     is_active: bool = True
     created_at: datetime
+    updated_at: Optional[datetime] = None
+    last_active: Optional[datetime] = None
 
     class Config:
         from_attributes = True
