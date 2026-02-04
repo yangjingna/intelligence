@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     CS_SIMILARITY_THRESHOLD: float = 0.7  # 客服RAG相似度阈值
 
     # CORS
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+    CORS_ORIGINS: list = ["*"]
 
     class Config:
         env_file = ".env"
