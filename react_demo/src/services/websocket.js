@@ -11,7 +11,7 @@ class WebSocketService {
       return
     }
 
-    const wsUrl = `ws://'http://47.108.117.7:8000'/ws?token=${token}`
+    const wsUrl = `ws://47.108.117.7:8000/ws?token=${token}`
     this.ws = new WebSocket(wsUrl)
 
     this.ws.onopen = () => {
