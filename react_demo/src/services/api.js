@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // 开发环境
-const API_BASE_URL = 'http://47.108.117.7:8000';
+const API_BASE_URL = 'http://47.108.117.7:8000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -68,10 +68,10 @@ api.interceptors.response.use(
 
 // Auth APIs
 export const authAPI = {
-  login: (data) => api.post('/api/auth/login', data),
-  register: (data) => api.post('/api/auth/register', data),
-  getProfile: () => api.get('/api/auth/profile'),
-  updateProfile: (data) => api.put('/api/auth/profile', data)
+  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
+  getProfile: () => api.get('/auth/profile'),
+  updateProfile: (data) => api.put('/auth/profile', data)
 }
 
 // Jobs APIs
