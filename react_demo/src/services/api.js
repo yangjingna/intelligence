@@ -1,9 +1,7 @@
 import axios from 'axios'
 
 // 开发环境
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? '/api'  // 生产环境使用相对路径
-  : 'http://localhost:80/api';  // 开发环境
+const API_BASE_URL = 'http://47.108.117.7:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
