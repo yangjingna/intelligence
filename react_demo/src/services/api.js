@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8000/api'
+// 开发环境
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? '/api'  // 生产环境使用相对路径
+  : 'http://localhost:80/api';  // 开发环境
 
 const api = axios.create({
   baseURL: API_BASE_URL,
