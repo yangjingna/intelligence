@@ -18,6 +18,8 @@ const useAuth = () => {
       // Navigate based on role
       if (userData.role === 'enterprise') {
         navigate('/jobs')
+      } else if (userData.role === 'government') {
+        navigate('/innovation-dynamics')
       } else {
         navigate('/')
       }

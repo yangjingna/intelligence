@@ -15,12 +15,10 @@ const FeatureCard = ({ to, icon, title, description, color }) => (
 )
 
 const Home = () => {
-  const { isAuthenticated, user } = useUserStore()
+  const { isAuthenticated, user, isEnterprise, isGovernment, isUniversity, isStudent } = useUserStore()
 
   // 根据用户角色显示不同的功能
-  const isEnterprise = user?.role === 'enterprise'
-
-  const features = isEnterprise ? [
+  const features = isEnterprise() ? [
     {
       to: '/jobs',
       icon: '📚',
@@ -49,7 +47,65 @@ const Home = () => {
       description: '24小时在线智能客服，解答平台使用问题',
       color: 'bg-purple-100'
     }
-  ] : [
+  ] : isGovernment() ? [
+    {
+      to: '/innovation-dynamics',
+      icon: '📊',
+      title: '创新动态',
+      description: '发布和管理区域创新动态信息，促进产学研合作',
+      color: 'bg-blue-100'
+    },
+    {
+      to: '/research-demands',
+      icon: '🔍',
+      title: '研发需求',
+      description: '查看企业发布的研发需求，对接技术合作',
+      color: 'bg-green-100'
+    },
+    {
+      to: '/technical-barriers',
+      icon: '🚧',
+      title: '技术壁垒',
+      description: '了解企业面临的技术壁垒，提供政策支持',
+      color: 'bg-orange-100'
+    },
+    {
+      to: '/cooperation-projects',
+      icon: '🤝',
+      title: '合作项目',
+      description: '查看产学研合作项目进展，推动成果转化',
+      color: 'bg-purple-100'
+    }
+  ] : isUniversity() ? [
+    {
+      to: '/research-achievements',
+      icon: '🎓',
+      title: '研发成果',
+      description: '发布和管理高校研发成果，促进成果转化',
+      color: 'bg-blue-100'
+    },
+    {
+      to: '/research-demands',
+      icon: '🔍',
+      title: '研发需求',
+      description: '查看企业发布的研发需求，寻找合作机会',
+      color: 'bg-green-100'
+    },
+    {
+      to: '/technical-barriers',
+      icon: '🚧',
+      title: '技术壁垒',
+      description: '查看企业技术壁垒，提供解决方案',
+      color: 'bg-orange-100'
+    },
+    {
+      to: '/customer-service',
+      icon: '🤖',
+      title: '智能客服',
+      description: '24小时在线智能客服，解答平台使用问题',
+      color: 'bg-purple-100'
+    }
+  ] : [  // 默认（学生）
     {
       to: '/jobs',
       icon: '📚',

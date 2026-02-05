@@ -62,8 +62,11 @@ const Login = () => {
 
       wsService.connect(token)
 
+      // 根据角色跳转到不同页面
       if (user.role === 'enterprise') {
         navigate('/jobs')
+      } else if (user.role === 'government') {
+        navigate('/innovation-dynamics')
       } else {
         navigate('/')
       }
