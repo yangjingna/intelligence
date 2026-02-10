@@ -42,7 +42,12 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-
+        
+    REDIS_ENABLED: bool = False  # 默认关闭Redis
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str = ""
 
 @lru_cache()
 def get_settings():

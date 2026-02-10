@@ -21,24 +21,24 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white border-b-4 border-blue-900 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold text-blue-600">产学研平台</span>
+              <span className="text-xl font-bold text-blue-900">产学研合作服务平台</span>
             </Link>
-            <nav className="hidden md:flex ml-10 space-x-8">
+            <nav className="hidden md:flex ml-10 space-x-6">
               <Link
                 to="/"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
               >
                 首页
               </Link>
               {isEnterprise() && (
                 <Link
                   to="/jobs"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   资源发布
                 </Link>
@@ -47,7 +47,7 @@ const Header = () => {
               {(isEnterprise() || isUniversity()) && (
                 <Link
                   to="/research-demands"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   研发需求
                 </Link>
@@ -56,7 +56,7 @@ const Header = () => {
               {(isEnterprise() || isUniversity()) && (
                 <Link
                   to="/technical-barriers"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   技术壁垒
                 </Link>
@@ -65,7 +65,7 @@ const Header = () => {
               {isUniversity() && (
                 <Link
                   to="/research-achievements"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   研发成果
                 </Link>
@@ -74,7 +74,7 @@ const Header = () => {
               {isEnterprise() && (
                 <Link
                   to="/cooperation-projects"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   合作项目
                 </Link>
@@ -83,7 +83,7 @@ const Header = () => {
               {isGovernment() && (
                 <Link
                   to="/dashboard"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   仪表盘
                 </Link>
@@ -92,7 +92,7 @@ const Header = () => {
               {isGovernment() && (
                 <Link
                   to="/innovation-dynamics"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   创新动态
                 </Link>
@@ -100,21 +100,21 @@ const Header = () => {
               {isAuthenticated && (
                 <Link
                   to="/chat"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   企业直聊
                 </Link>
               )}
               <Link
                 to="/customer-service"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
               >
-                智能客服
+                在线客服
               </Link>
               {isEnterprise() && (
                 <Link
                   to="/knowledge"
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-blue-900"
                 >
                   知识库管理
                 </Link>
@@ -125,14 +125,14 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end text-sm">
                   <Link
                     to="/profile"
-                    className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors"
+                    className="text-gray-700 hover:text-blue-900 font-medium"
                   >
                     {user?.name || '个人中心'}
                   </Link>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-gray-500">
                     {getRoleLabel()}
                     {isEnterprise() && user?.company && ` · ${user.company}`}
                     {isUniversity() && user?.university && ` · ${user.university}`}
@@ -142,7 +142,7 @@ const Header = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-blue-900 text-white px-4 py-2 text-sm font-medium hover:bg-blue-800 border-2 border-blue-900"
                 >
                   退出
                 </button>
@@ -151,13 +151,13 @@ const Header = () => {
               <>
                 <Link
                   to="/login"
-                  className="text-gray-600 hover:text-blue-600 px-4 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-900 px-4 py-2 text-sm font-medium"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-blue-900 text-white px-4 py-2 text-sm font-medium hover:bg-blue-800 border-2 border-blue-900"
                 >
                   注册
                 </Link>

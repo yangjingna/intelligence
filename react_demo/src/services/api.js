@@ -2,10 +2,9 @@ import axios from 'axios'
 
 // 开发环境
 const API_BASE_URL = 'http://47.108.117.7:8000/api';
-
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }

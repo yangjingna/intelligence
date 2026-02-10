@@ -12,6 +12,7 @@ from .research_achievements import router as research_achievements_router
 from .cooperation_projects import router as cooperation_projects_router
 from .inquiry_records import router as inquiry_records_router
 from .innovation_dynamics import router as innovation_dynamics_router
+from .stats import router as stats_router
 
 api_router = APIRouter()
 
@@ -28,3 +29,4 @@ api_router.include_router(research_achievements_router, prefix="/research-achiev
 api_router.include_router(cooperation_projects_router, prefix="/cooperation-projects", tags=["合作项目"])
 api_router.include_router(inquiry_records_router, prefix="/inquiry-records", tags=["咨询记录"])
 api_router.include_router(innovation_dynamics_router, prefix="/innovation-dynamics", tags=["创新动态"])
+api_router.include_router(stats_router, prefix="/stats", tags=["统计数据"])
