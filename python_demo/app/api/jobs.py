@@ -80,7 +80,7 @@ async def create_job(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != "enterprise":
+    if current_user.role.lower() != "enterprise":
         raise HTTPException(status_code=403, detail="只有企业用户可以发布岗位")
 
     job = Job(

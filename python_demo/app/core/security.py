@@ -95,4 +95,7 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户不存在"
         )
+    # 确保 role 是小写（兼容旧数据）
+    if user.role:
+        user.role = user.role.lower()
     return user

@@ -15,6 +15,7 @@ import { ResearchAchievements, ResearchAchievementForm, ResearchAchievementDetai
 import { CooperationProjects, CooperationProjectForm, CooperationProjectDetail } from './pages/CooperationProjects'
 import { Inquiries, InquiryDetail } from './pages/Inquiries'
 import { InnovationDynamics } from './pages/InnovationDynamics'
+import Dashboard from './pages/Dashboard'
 import useUserStore from './stores/userStore'
 import useChatStore from './stores/chatStore'
 import wsService from './services/websocket'
@@ -234,7 +235,7 @@ const GlobalMessageHandler = () => {
 
 // Enterprise only route wrapper
 const EnterpriseRoute = ({ children }) => {
-  const { isAuthenticated, user, _hasHydrated } = useUserStore()
+  const { isAuthenticated, user, isEnterprise, _hasHydrated } = useUserStore()
 
   // Wait for hydration to complete before checking auth
   if (!_hasHydrated) {
@@ -249,7 +250,7 @@ const EnterpriseRoute = ({ children }) => {
     return <Navigate to="/login" replace />
   }
 
-  if (user?.role !== 'enterprise') {
+  if (!isEnterprise()) {
     return <Navigate to="/" replace />
   }
 
@@ -281,7 +282,7 @@ const UniversityRoute = ({ children }) => {
 
 // Government only route wrapper
 const GovernmentRoute = ({ children }) => {
-  const { isAuthenticated, user, _hasHydrated } = useUserStore()
+  const { isAuthenticated, user, isGovernment, _hasHydrated } = useUserStore()
 
   if (!_hasHydrated) {
     return (
@@ -295,7 +296,7 @@ const GovernmentRoute = ({ children }) => {
     return <Navigate to="/login" replace />
   }
 
-  if (user?.role !== 'government') {
+  if (!isGovernment()) {
     return <Navigate to="/" replace />
   }
 
@@ -530,6 +531,14 @@ function App() {
         />
 
         {/* Innovation Dynamics routes */}
+        <Route
+          path="dashboard"
+          element={
+            <GovernmentRoute>
+              <Dashboard />
+            </GovernmentRoute>
+          }
+        />
         <Route
           path="innovation-dynamics"
           element={

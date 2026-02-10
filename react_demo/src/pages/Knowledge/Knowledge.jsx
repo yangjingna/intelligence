@@ -10,19 +10,31 @@ const Knowledge = () => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
-  const [filterPreset, setFilterPreset] = useState('')
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const pageSize = 10
 
   useEffect(() => {
+    // 打印用户信息调试
+    const storage = localStorage.getItem('user-storage')
+    if (storage) {
+      try {
+        const parsed = JSON.parse(storage)
+        const user = parsed?.state?.user
+        console.log('[Knowledge] 当前用户信息:', user)
+        console.log('[Knowledge] user.role:', user?.role)
+        console.log('[Knowledge] user.role.lower():', user?.role?.toLowerCase())
+      } catch (e) {
+        console.error('[Knowledge] 解析storage失败:', e)
+      }
+    }
     fetchCategories()
     fetchStats()
   }, [])
 
   useEffect(() => {
     fetchKnowledge()
-  }, [page, filterCategory, filterPreset])
+  }, [page, filterCategory])
 
   const fetchKnowledge = async () => {
     setLoading(true)
@@ -31,8 +43,7 @@ const Knowledge = () => {
         page,
         page_size: pageSize,
         search: searchTerm || undefined,
-        category: filterCategory || undefined,
-        is_preset: filterPreset !== '' ? parseInt(filterPreset) : undefined
+        category: filterCategory || undefined
       }
       const response = await knowledgeAPI.getKnowledge(params)
       setKnowledge(response.data.items || [])
@@ -126,27 +137,13 @@ const Knowledge = () => {
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">预设问答</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.preset_count}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-500">学习问答</p>
+                <p className="text-sm text-gray-500">知识条目</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.learned_count}</p>
               </div>
             </div>
@@ -204,18 +201,6 @@ const Knowledge = () => {
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-          <select
-            value={filterPreset}
-            onChange={(e) => {
-              setFilterPreset(e.target.value)
-              setPage(1)
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">全部类型</option>
-            <option value="1">预设问答</option>
-            <option value="0">学习问答</option>
-          </select>
           <button
             type="submit"
             className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
@@ -257,9 +242,6 @@ const Knowledge = () => {
                     分类
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    类型
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     命中次数
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -288,13 +270,6 @@ const Knowledge = () => {
                         item.category ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
                       }`}>
                         {item.category || '未分类'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        item.is_preset ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                      }`}>
-                        {item.is_preset ? '预设' : '学习'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">

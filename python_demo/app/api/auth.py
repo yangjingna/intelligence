@@ -21,12 +21,16 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
                 detail="该邮箱已被注册"
             )
 
+        # 确保角色是小写
+        role = user_data.role.lower() if user_data.role else user_data.role
+        print(f"[DEBUG] 注册 - role原始值: {user_data.role}, 转换后: {role}")
+
         user = User(
             email=user_data.email,
             hashed_password=get_password_hash(user_data.password),
             name=user_data.name,
             phone=user_data.phone,
-            role=user_data.role,
+            role=role,
             # Student fields
             school=user_data.school,
             major=user_data.major,
@@ -50,8 +54,12 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
         token = create_access_token({"sub": str(user.id)})
 
+        # 创建响应时确保角色是小写
+        user_dict = UserResponse.model_validate(user).model_dump()
+        user_dict['role'] = user_dict['role'].lower() if user_dict['role'] else user_dict['role']
+
         return AuthResponse(
-            user=UserResponse.model_validate(user),
+            user=UserResponse(**user_dict),
             token=token
         )
 
@@ -84,14 +92,20 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
 
     token = create_access_token({"sub": str(user.id)})
 
+    # 创建响应时确保角色是小写
+    user_dict = UserResponse.model_validate(user).model_dump()
+    user_dict['role'] = user_dict['role'].lower() if user_dict['role'] else user_dict['role']
+
     return AuthResponse(
-        user=UserResponse.model_validate(user),
+        user=UserResponse(**user_dict),
         token=token
     )
 
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):
-    return UserResponse.model_validate(current_user)
+    user_dict = UserResponse.model_validate(current_user).model_dump()
+    user_dict['role'] = user_dict['role'].lower() if user_dict['role'] else user_dict['role']
+    return UserResponse(**user_dict)
 
 @router.put("/profile", response_model=UserResponse)
 async def update_profile(

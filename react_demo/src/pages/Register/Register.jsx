@@ -125,6 +125,9 @@ const Register = () => {
     setApiError('')
 
     try {
+      // 调试：打印 role 的值
+      console.log('[Register] 提交注册数据, role:', role, 'USER_ROLES:', USER_ROLES)
+
       const submitData = {
         name: formData.name,
         email: formData.email,

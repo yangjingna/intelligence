@@ -19,7 +19,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     name = Column(String(100), nullable=False)
     phone = Column(String(20))
-    role = Column(String(10), nullable=False)
+    role = Column(String(20), nullable=False)
 
     school = Column(String(200))
     major = Column(String(100))

@@ -66,7 +66,7 @@ const Login = () => {
       if (user.role === 'enterprise') {
         navigate('/jobs')
       } else if (user.role === 'government') {
-        navigate('/innovation-dynamics')
+        navigate('/dashboard')
       } else {
         navigate('/')
       }

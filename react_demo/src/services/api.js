@@ -52,7 +52,8 @@ api.interceptors.response.use(
         'resources',  // Resources has both public and auth modes
         'jobs',       // Jobs has both public and auth modes
         'auth/profile', // Profile fetch might fail if token expired
-        'summary'     // Summary API
+        'summary',     // Summary API
+        'innovation-dynamics'  // Innovation Dynamics has role check
       ]
 
       const shouldSkipRedirect = noRedirectUrls.some(path => url.includes(path))
@@ -61,6 +62,18 @@ api.interceptors.response.use(
         localStorage.removeItem('user-storage')
         window.location.href = '/login'
       }
+    }
+    if (error.response?.status === 403) {
+      const url = error.config?.url || ''
+      const urlLower = url.toLowerCase()
+
+      // 判断是否是创新动态相关的请求
+      if (urlLower.includes('innovation-dynamics')) {
+        console.error('[API] 权限不足: 创新动态仅政府用户可访问')
+      } else {
+        console.error('[API] 权限不足:', error.response.data?.detail || '没有访问权限')
+      }
+      // 可以选择是否重定向，目前由页面组件自行处理显示
     }
     return Promise.reject(error)
   }

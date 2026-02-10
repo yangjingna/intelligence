@@ -31,12 +31,10 @@ async def get_innovation_dynamics(
     db: Session = Depends(get_db)
 ):
     """获取创新动态列表"""
-    # 只有政府用户可以访问创新动态
-    if current_user.role != "government":
+    # 只有政府用户可以查看创新动态
+    if current_user.role.lower() != "government":
         raise HTTPException(status_code=403, detail="只有政府用户可以查看创新动态")
-
     query = db.query(InnovationDynamics)
-
     if search:
         query = query.filter(
             (InnovationDynamics.title.contains(search)) |
@@ -66,7 +64,8 @@ async def get_dynamic(
     db: Session = Depends(get_db)
 ):
     """获取单个创新动态详情"""
-    if current_user.role != "government":
+    # 只有政府用户可以查看创新动态
+    if current_user.role.lower() != "government":
         raise HTTPException(status_code=403, detail="只有政府用户可以查看创新动态")
 
     dynamic = db.query(InnovationDynamics).filter(InnovationDynamics.id == dynamic_id).first()
@@ -84,7 +83,8 @@ async def create_dynamic(
     db: Session = Depends(get_db)
 ):
     """创建创新动态"""
-    if current_user.role != "government":
+    # 只有政府用户可以创建创新动态
+    if current_user.role.lower() != "government":
         raise HTTPException(status_code=403, detail="只有政府用户可以创建创新动态")
 
     dynamic = InnovationDynamics(**dynamic_data.model_dump())
@@ -104,7 +104,8 @@ async def update_dynamic(
     db: Session = Depends(get_db)
 ):
     """更新创新动态"""
-    if current_user.role != "government":
+    # 只有政府用户可以修改创新动态
+    if current_user.role.lower() != "government":
         raise HTTPException(status_code=403, detail="只有政府用户可以修改创新动态")
 
     dynamic = db.query(InnovationDynamics).filter(InnovationDynamics.id == dynamic_id).first()
@@ -129,7 +130,8 @@ async def delete_dynamic(
     db: Session = Depends(get_db)
 ):
     """删除创新动态"""
-    if current_user.role != "government":
+    # 只有政府用户可以删除创新动态
+    if current_user.role.lower() != "government":
         raise HTTPException(status_code=403, detail="只有政府用户可以删除创新动态")
 
     dynamic = db.query(InnovationDynamics).filter(InnovationDynamics.id == dynamic_id).first()
@@ -148,7 +150,11 @@ async def get_innovation_stats(
     db: Session = Depends(get_db)
 ):
     """获取创新统计数据"""
-    if current_user.role != "government":
+    # 调试信息
+    print(f"[Stats] Current user: {current_user.email}, role: {current_user.role}")
+
+    # 只有政府用户可以查看统计数据
+    if current_user.role.lower() != "government":
         raise HTTPException(status_code=403, detail="只有政府用户可以查看统计数据")
 
     # 研发需求统计

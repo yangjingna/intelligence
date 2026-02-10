@@ -9,7 +9,7 @@ from typing import Optional, List
 from ..core.database import get_db
 from ..core.security import get_current_user
 from ..models.user import User
-from ..models.knowledge import CustomerServiceKnowledge
+from ..models.knowledge import KnowledgeBase
 from ..schemas.knowledge import (
     KnowledgeCreate,
     KnowledgeUpdate,
@@ -25,7 +25,8 @@ router = APIRouter()
 
 def check_enterprise_user(user: User):
     """检查是否为企业用户"""
-    if user.role != "enterprise":
+    print(f"[DEBUG] check_enterprise_user: user.id={user.id}, user.email={user.email}, user.role={user.role}, user.role.lower()={user.role.lower()}")
+    if user.role.lower() != "enterprise":
         raise HTTPException(status_code=403, detail="仅企业用户可访问知识库管理")
 
 
@@ -35,39 +36,34 @@ async def get_knowledge_list(
     page_size: int = Query(10, ge=1, le=100, description="每页数量"),
     search: Optional[str] = Query(None, description="搜索关键词"),
     category: Optional[str] = Query(None, description="分类筛选"),
-    is_preset: Optional[int] = Query(None, description="是否预设: 0-否, 1-是"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取知识库列表（支持分页、搜索、分类筛选）"""
+    """获取企业知识库列表（支持分页、搜索、分类筛选）"""
     check_enterprise_user(current_user)
 
-    query = db.query(CustomerServiceKnowledge)
+    query = db.query(KnowledgeBase).filter(KnowledgeBase.hr_id == current_user.id)
 
     # 搜索筛选
     if search:
         search_pattern = f"%{search}%"
         query = query.filter(
             or_(
-                CustomerServiceKnowledge.question.like(search_pattern),
-                CustomerServiceKnowledge.answer.like(search_pattern),
-                CustomerServiceKnowledge.keywords.like(search_pattern)
+                KnowledgeBase.question.like(search_pattern),
+                KnowledgeBase.answer.like(search_pattern),
+                KnowledgeBase.keywords.like(search_pattern)
             )
         )
 
     # 分类筛选
     if category:
-        query = query.filter(CustomerServiceKnowledge.category == category)
-
-    # 预设筛选
-    if is_preset is not None:
-        query = query.filter(CustomerServiceKnowledge.is_preset == is_preset)
+        query = query.filter(KnowledgeBase.category == category)
 
     # 计算总数
     total = query.count()
 
     # 分页查询
-    items = query.order_by(CustomerServiceKnowledge.created_at.desc()) \
+    items = query.order_by(KnowledgeBase.created_at.desc()) \
         .offset((page - 1) * page_size) \
         .limit(page_size) \
         .all()
@@ -85,24 +81,23 @@ async def get_knowledge_stats(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取知识库统计信息"""
+    """获取企业知识库统计信息"""
     check_enterprise_user(current_user)
 
-    # 总数
-    total_records = db.query(CustomerServiceKnowledge).count()
+    # 总数（该企业用户的知识）
+    total_records = db.query(KnowledgeBase).filter(KnowledgeBase.hr_id == current_user.id).count()
 
-    # 预设数量
-    preset_count = db.query(CustomerServiceKnowledge) \
-        .filter(CustomerServiceKnowledge.is_preset == 1).count()
+    # 预设数量（这里统计所有知识，因为没有 is_preset 字段）
+    preset_count = 0
 
     # 学习数量
-    learned_count = db.query(CustomerServiceKnowledge) \
-        .filter(CustomerServiceKnowledge.is_preset == 0).count()
+    learned_count = total_records
 
     # 热门问题（按命中次数排序，取前5个）
-    top_questions = db.query(CustomerServiceKnowledge) \
-        .filter(CustomerServiceKnowledge.hit_count > 0) \
-        .order_by(CustomerServiceKnowledge.hit_count.desc()) \
+    top_questions = db.query(KnowledgeBase) \
+        .filter(KnowledgeBase.hr_id == current_user.id) \
+        .filter(KnowledgeBase.hit_count > 0) \
+        .order_by(KnowledgeBase.hit_count.desc()) \
         .limit(5) \
         .all()
 
@@ -125,15 +120,16 @@ async def get_categories(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取所有分类列表"""
+    """获取企业知识库所有分类列表"""
     check_enterprise_user(current_user)
 
     # 预定义分类
-    preset_categories = ["平台功能", "注册登录", "岗位招聘", "资源中心", "其他"]
+    preset_categories = ["岗位信息", "薪资福利", "面试流程", "公司情况", "其他"]
 
-    # 获取数据库中已使用的分类
-    db_categories = db.query(CustomerServiceKnowledge.category) \
-        .filter(CustomerServiceKnowledge.category.isnot(None)) \
+    # 获取数据库中该企业已使用的分类
+    db_categories = db.query(KnowledgeBase.category) \
+        .filter(KnowledgeBase.hr_id == current_user.id) \
+        .filter(KnowledgeBase.category.isnot(None)) \
         .distinct() \
         .all()
 
@@ -154,8 +150,9 @@ async def get_knowledge_item(
     """获取单个知识条目"""
     check_enterprise_user(current_user)
 
-    item = db.query(CustomerServiceKnowledge).filter(
-        CustomerServiceKnowledge.id == knowledge_id
+    item = db.query(KnowledgeBase).filter(
+        KnowledgeBase.id == knowledge_id,
+        KnowledgeBase.hr_id == current_user.id
     ).first()
 
     if not item:
@@ -177,12 +174,12 @@ async def create_knowledge(
     embedding = await embedding_service.get_embedding(data.question)
 
     # 创建知识条目
-    item = CustomerServiceKnowledge(
+    item = KnowledgeBase(
         question=data.question,
         answer=data.answer,
         category=data.category,
         keywords=data.keywords,
-        is_preset=1 if data.is_preset else 0,
+        hr_id=current_user.id,
         embedding=embedding,
         hit_count=0
     )
@@ -204,8 +201,9 @@ async def update_knowledge(
     """更新知识条目（如果问题改变则重新生成embedding）"""
     check_enterprise_user(current_user)
 
-    item = db.query(CustomerServiceKnowledge).filter(
-        CustomerServiceKnowledge.id == knowledge_id
+    item = db.query(KnowledgeBase).filter(
+        KnowledgeBase.id == knowledge_id,
+        KnowledgeBase.hr_id == current_user.id
     ).first()
 
     if not item:
@@ -237,8 +235,9 @@ async def delete_knowledge(
     """删除知识条目"""
     check_enterprise_user(current_user)
 
-    item = db.query(CustomerServiceKnowledge).filter(
-        CustomerServiceKnowledge.id == knowledge_id
+    item = db.query(KnowledgeBase).filter(
+        KnowledgeBase.id == knowledge_id,
+        KnowledgeBase.hr_id == current_user.id
     ).first()
 
     if not item:

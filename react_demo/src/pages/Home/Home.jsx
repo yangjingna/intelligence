@@ -17,6 +17,14 @@ const FeatureCard = ({ to, icon, title, description, color }) => (
 const Home = () => {
   const { isAuthenticated, user, isEnterprise, isGovernment, isUniversity, isStudent } = useUserStore()
 
+  // 调试信息
+  console.log('[Home] 用户信息:', user)
+  console.log('[Home] 用户角色:', user?.role)
+  console.log('[Home] isEnterprise:', isEnterprise())
+  console.log('[Home] isGovernment:', isGovernment())
+  console.log('[Home] isUniversity:', isUniversity())
+  console.log('[Home] isStudent:', isStudent())
+
   // 根据用户角色显示不同的功能
   const features = isEnterprise() ? [
     {
@@ -49,24 +57,24 @@ const Home = () => {
     }
   ] : isGovernment() ? [
     {
-      to: '/innovation-dynamics',
+      to: '/dashboard',
       icon: '📊',
+      title: '数据仪表盘',
+      description: '实时掌握区域创新动态，进行宏观调控和政策支持',
+      color: 'bg-blue-100'
+    },
+    {
+      to: '/innovation-dynamics',
+      icon: '📰',
       title: '创新动态',
       description: '发布和管理区域创新动态信息，促进产学研合作',
-      color: 'bg-blue-100'
+      color: 'bg-green-100'
     },
     {
       to: '/research-demands',
       icon: '🔍',
       title: '研发需求',
       description: '查看企业发布的研发需求，对接技术合作',
-      color: 'bg-green-100'
-    },
-    {
-      to: '/technical-barriers',
-      icon: '🚧',
-      title: '技术壁垒',
-      description: '了解企业面临的技术壁垒，提供政策支持',
       color: 'bg-orange-100'
     },
     {

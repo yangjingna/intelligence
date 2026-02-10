@@ -13,7 +13,6 @@ class KnowledgeCreate(BaseModel):
     answer: str
     category: Optional[str] = None
     keywords: Optional[str] = None
-    is_preset: bool = False
 
 
 class KnowledgeUpdate(BaseModel):
@@ -32,7 +31,6 @@ class KnowledgeResponse(BaseModel):
     category: Optional[str] = None
     keywords: Optional[str] = None
     hit_count: int
-    is_preset: int
     created_at: datetime
     updated_at: datetime
 

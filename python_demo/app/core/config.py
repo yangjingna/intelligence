@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # GLM API
-    GLM_API_KEY: str = ""
+    GLM_API_KEY: str = "e6236095d7084fbd9aaaf198f005f347.l6gzd7zGZxn6TOyP"
     GLM_API_URL: str = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
     # 智谱 Embedding API

@@ -16,10 +16,10 @@ const useAuth = () => {
       wsService.connect(authToken)
 
       // Navigate based on role
-      if (userData.role === 'enterprise') {
+      if (userData.role?.toLowerCase() === 'enterprise') {
         navigate('/jobs')
-      } else if (userData.role === 'government') {
-        navigate('/innovation-dynamics')
+      } else if (userData.role?.toLowerCase() === 'government') {
+        navigate('/dashboard')
       } else {
         navigate('/')
       }
@@ -71,8 +71,8 @@ const useAuth = () => {
     user,
     token,
     isAuthenticated,
-    isStudent: user?.role === 'student',
-    isEnterprise: user?.role === 'enterprise',
+    isStudent: user?.role?.toLowerCase() === 'student',
+    isEnterprise: user?.role?.toLowerCase() === 'enterprise',
     login,
     register,
     logout,

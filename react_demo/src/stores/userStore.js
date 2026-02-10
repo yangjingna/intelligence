@@ -27,15 +27,15 @@ const useUserStore = create(
         user: { ...get().user, ...userData }
       }),
 
-      getRole: () => get().user?.role || null,
+      getRole: () => get().user?.role?.toLowerCase() || null,
 
-      isStudent: () => get().user?.role === 'student',
+      isStudent: () => get().user?.role?.toLowerCase() === 'student',
 
-      isEnterprise: () => get().user?.role === 'enterprise',
+      isEnterprise: () => get().user?.role?.toLowerCase() === 'enterprise',
 
-      isUniversity: () => get().user?.role === 'university',
+      isUniversity: () => get().user?.role?.toLowerCase() === 'university',
 
-      isGovernment: () => get().user?.role === 'government'
+      isGovernment: () => get().user?.role?.toLowerCase() === 'government'
     }),
     {
       name: 'user-storage',

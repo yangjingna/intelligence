@@ -306,13 +306,7 @@ const Chat = () => {
     addMessage(tempMessage)
 
     try {
-      // Send via WebSocket for real-time
-      wsService.send('message', {
-        conversationId: currentConversation.id,
-        content: messageContent
-      })
-
-      // Also send via HTTP as backup
+      // Send via HTTP
       await chatAPI.sendMessage(currentConversation.id, { content: messageContent })
     } catch (error) {
       console.error('Failed to send message:', error)
